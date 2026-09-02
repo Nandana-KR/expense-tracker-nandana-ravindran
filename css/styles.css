@@ -293,6 +293,25 @@ body {
   background-color: var(--color-primary-dark);
 }
 
+.btn--ghost {
+  background-color: transparent;
+  color: var(--color-muted);
+  border: 1px solid var(--color-border);
+}
+
+.btn--ghost:hover {
+  background-color: #f3f4f6;
+}
+
+.form__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.form__actions .btn {
+  flex: 1;
+}
+
 /* ===== Transaction list ===== */
 .filters {
   display: grid;

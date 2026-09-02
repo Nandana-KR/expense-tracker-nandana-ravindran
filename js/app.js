@@ -31,6 +31,8 @@ import {
   renderMonthlySummary,
   renderCategoryChart,
   bindMonthChange,
+  bindCancelEdit,
+  setDateToToday,
 } from "./ui.js";
 import { validateTransaction } from "./validation.js";
 
@@ -133,6 +135,15 @@ function handleEditTransaction(id) {
 }
 
 /**
+ * Cancel an in-progress edit and reset the form back to add mode.
+ */
+function handleCancelEdit() {
+  editingId = null;
+  resetForm();
+  console.log("[app] Edit cancelled");
+}
+
+/**
  * Handle deleting a transaction after confirmation.
  * @param {string} id
  */
@@ -160,11 +171,13 @@ function init() {
   // Populate category dropdowns before anything else.
   populateCategoryOptions(elements.type.value);
   populateFilterCategories();
+  setDateToToday();
 
   elements.form.addEventListener("submit", handleSubmit);
   // Clear all error highlights as soon as the user edits any field.
   elements.form.addEventListener("input", clearErrors);
   bindTypeChange();
+  bindCancelEdit(handleCancelEdit);
   bindListActions({
     onDelete: handleDeleteTransaction,
     onEdit: handleEditTransaction,

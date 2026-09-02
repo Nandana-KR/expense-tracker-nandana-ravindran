@@ -18,6 +18,7 @@ export const elements = {
   totalIncome: document.getElementById("total-income"),
   totalExpense: document.getElementById("total-expense"),
   submitButton: document.querySelector("#transaction-form button[type='submit']"),
+  cancelButton: document.getElementById("cancel-edit"),
   filterType: document.getElementById("filter-type"),
   filterCategory: document.getElementById("filter-category"),
   monthSelect: document.getElementById("month-select"),
@@ -286,7 +287,28 @@ export function resetForm() {
   // After reset the type falls back to its first option, so refresh categories.
   populateCategoryOptions(elements.type.value);
   elements.submitButton.textContent = "Add Transaction";
+  elements.cancelButton.hidden = true;
+  setDateToToday();
   clearErrors();
+}
+
+/**
+ * Default the date field to today's date (YYYY-MM-DD).
+ */
+export function setDateToToday() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  elements.date.value = `${yyyy}-${mm}-${dd}`;
+}
+
+/**
+ * Attach a click handler to the Cancel (edit) button.
+ * @param {() => void} onCancel
+ */
+export function bindCancelEdit(onCancel) {
+  elements.cancelButton.addEventListener("click", onCancel);
 }
 
 /**
@@ -302,6 +324,7 @@ export function fillForm(transaction) {
   elements.date.value = transaction.date;
   elements.description.value = transaction.description;
   elements.submitButton.textContent = "Update Transaction";
+  elements.cancelButton.hidden = false;
   elements.form.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
