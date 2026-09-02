@@ -2,6 +2,8 @@
 // Responsible for reading from and writing to the DOM. It does not hold data
 // or business logic, it just reflects state onto the page and reads user input.
 
+import { CATEGORIES, ALL_CATEGORIES } from "./constants.js";
+
 // Cache references to the elements we interact with often.
 export const elements = {
   form: document.getElementById("transaction-form"),
@@ -115,6 +117,46 @@ export function renderSummary(summary) {
 }
 
 /**
+ * Populate the form's category dropdown with the categories that belong to
+ * the given transaction type (income or expense).
+ * @param {string} type
+ * @param {string} [selected] - a category to keep selected if it still exists
+ */
+export function populateCategoryOptions(type, selected) {
+  const categories = CATEGORIES[type] || [];
+  elements.category.innerHTML =
+    `<option value="">Select category</option>` +
+    categories
+      .map((c) => `<option value="${c}">${c}</option>`)
+      .join("");
+
+  if (selected && categories.includes(selected)) {
+    elements.category.value = selected;
+  }
+  console.log(`[ui] Category options set for type "${type}"`);
+}
+
+/**
+ * Populate the filter category dropdown with every possible category.
+ */
+export function populateFilterCategories() {
+  elements.filterCategory.innerHTML =
+    `<option value="all">All categories</option>` +
+    ALL_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join("");
+}
+
+/**
+ * Attach a listener that repopulates categories whenever the type changes.
+ * @param {() => void} [onChange]
+ */
+export function bindTypeChange(onChange) {
+  elements.type.addEventListener("change", () => {
+    populateCategoryOptions(elements.type.value);
+    if (onChange) onChange();
+  });
+}
+
+/**
  * Read the current values from the transaction form.
  * @returns {{type:string, amount:string, category:string, date:string, description:string}}
  */
@@ -133,6 +175,8 @@ export function readForm() {
  */
 export function resetForm() {
   elements.form.reset();
+  // After reset the type falls back to its first option, so refresh categories.
+  populateCategoryOptions(elements.type.value);
   elements.submitButton.textContent = "Add Transaction";
 }
 
@@ -143,8 +187,9 @@ export function resetForm() {
  */
 export function fillForm(transaction) {
   elements.type.value = transaction.type;
+  // Repopulate categories for this type, keeping the transaction's category selected.
+  populateCategoryOptions(transaction.type, transaction.category);
   elements.amount.value = transaction.amount;
-  elements.category.value = transaction.category;
   elements.date.value = transaction.date;
   elements.description.value = transaction.description;
   elements.submitButton.textContent = "Update Transaction";

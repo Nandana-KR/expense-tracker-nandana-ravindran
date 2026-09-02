@@ -15,6 +15,9 @@ import {
   fillForm,
   readFilters,
   bindFilters,
+  bindTypeChange,
+  populateCategoryOptions,
+  populateFilterCategories,
   renderTransactions,
   renderSummary,
   bindListActions,
@@ -116,7 +119,12 @@ function handleDeleteTransaction(id) {
 function init() {
   console.log("[Expense Tracker] App initialised");
 
+  // Populate category dropdowns before anything else.
+  populateCategoryOptions(elements.type.value);
+  populateFilterCategories();
+
   elements.form.addEventListener("submit", handleSubmit);
+  bindTypeChange();
   bindListActions({
     onDelete: handleDeleteTransaction,
     onEdit: handleEditTransaction,
