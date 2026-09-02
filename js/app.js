@@ -1,4 +1,14 @@
-// Entry point for the Expense Tracker app.
-// This file wires everything together as we build features.
+// app.js
+// Entry point. Wires the modules together and starts the app.
 
-console.log("[Expense Tracker] App initialised");
+import { loadTransactions } from "./storage.js";
+
+function init() {
+  console.log("[Expense Tracker] App initialised");
+
+  // Load any previously saved transactions (empty array on first run).
+  const transactions = loadTransactions();
+  console.log("[Expense Tracker] Current transactions:", transactions);
+}
+
+init();
