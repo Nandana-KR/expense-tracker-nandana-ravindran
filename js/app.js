@@ -2,7 +2,15 @@
 // Entry point. Wires the modules together and starts the app.
 
 import { addTransaction, getTransactions } from "./state.js";
-import { elements, readForm, resetForm } from "./ui.js";
+import { elements, readForm, resetForm, renderTransactions } from "./ui.js";
+
+/**
+ * Re-render everything that depends on the transaction data.
+ */
+function render() {
+  const transactions = getTransactions();
+  renderTransactions(transactions);
+}
 
 /**
  * Handle the Add Transaction form submission.
@@ -16,18 +24,16 @@ function handleAddTransaction(event) {
 
   addTransaction(data);
   resetForm();
-
-  console.log("[app] Transactions now:", getTransactions());
+  render();
 }
 
 function init() {
   console.log("[Expense Tracker] App initialised");
 
-  // Load and log any previously saved transactions.
-  console.log("[Expense Tracker] Loaded transactions:", getTransactions());
-
-  // Listen for form submissions.
   elements.form.addEventListener("submit", handleAddTransaction);
+
+  // Initial paint from saved data.
+  render();
 }
 
 init();
