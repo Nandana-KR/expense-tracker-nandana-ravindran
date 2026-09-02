@@ -11,13 +11,86 @@
 <body>
   <header class="app-header">
     <h1>Expense Tracker</h1>
+    <p class="app-header__subtitle">Track your income and expenses</p>
   </header>
 
   <main class="app-main">
-    <p>Project setup complete. Features coming next.</p>
+    <!-- Summary: total income, expense and balance -->
+    <section class="summary" aria-label="Financial summary">
+      <div class="summary__card summary__card--balance">
+        <span class="summary__label">Balance</span>
+        <span class="summary__value" id="balance">₹0.00</span>
+      </div>
+      <div class="summary__card summary__card--income">
+        <span class="summary__label">Income</span>
+        <span class="summary__value" id="total-income">₹0.00</span>
+      </div>
+      <div class="summary__card summary__card--expense">
+        <span class="summary__label">Expense</span>
+        <span class="summary__value" id="total-expense">₹0.00</span>
+      </div>
+    </section>
+
+    <!-- Form: add a transaction -->
+    <section class="form-section" aria-label="Add transaction">
+      <h2 class="section-title">Add Transaction</h2>
+      <form id="transaction-form" class="form" novalidate>
+        <div class="form__row">
+          <div class="form__group">
+            <label for="type">Type</label>
+            <select id="type" name="type">
+              <option value="expense">Expense</option>
+              <option value="income">Income</option>
+            </select>
+          </div>
+
+          <div class="form__group">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" name="amount" placeholder="0.00" step="0.01" />
+          </div>
+        </div>
+
+        <div class="form__row">
+          <div class="form__group">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+              <option value="">Select category</option>
+              <option value="Food">Food</option>
+              <option value="Transport">Transport</option>
+              <option value="Shopping">Shopping</option>
+              <option value="Bills">Bills</option>
+              <option value="Salary">Salary</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form__group">
+            <label for="date">Date</label>
+            <input type="date" id="date" name="date" />
+          </div>
+        </div>
+
+        <div class="form__group">
+          <label for="description">Description</label>
+          <input type="text" id="description" name="description" placeholder="e.g. Lunch with team" />
+        </div>
+
+        <button type="submit" class="btn btn--primary">Add Transaction</button>
+      </form>
+    </section>
+
+    <!-- Transaction list -->
+    <section class="list-section" aria-label="Transactions">
+      <h2 class="section-title">Transactions</h2>
+      <ul id="transaction-list" class="transaction-list">
+        <!-- Transactions will be rendered here by JavaScript -->
+      </ul>
+      <p id="empty-state" class="empty-state">
+        No transactions yet. Add one above to get started.
+      </p>
+    </section>
   </main>
 
-  <!-- App entry point. type="module" lets us split JS into files later. -->
   <script type="module" src="js/app.js"></script>
 </body>
 
