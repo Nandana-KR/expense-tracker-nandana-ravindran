@@ -16,6 +16,8 @@ export const elements = {
   totalIncome: document.getElementById("total-income"),
   totalExpense: document.getElementById("total-expense"),
   submitButton: document.querySelector("#transaction-form button[type='submit']"),
+  filterType: document.getElementById("filter-type"),
+  filterCategory: document.getElementById("filter-category"),
 };
 
 /**
@@ -80,6 +82,12 @@ export function renderTransactions(transactions) {
 
   if (!transactions.length) {
     elements.emptyState.style.display = "block";
+    const filtersActive =
+      elements.filterType.value !== "all" ||
+      elements.filterCategory.value !== "all";
+    elements.emptyState.textContent = filtersActive
+      ? "No transactions match the selected filters."
+      : "No transactions yet. Add one above to get started.";
     console.log("[ui] No transactions to render, showing empty state");
     return;
   }
@@ -141,6 +149,26 @@ export function fillForm(transaction) {
   elements.description.value = transaction.description;
   elements.submitButton.textContent = "Update Transaction";
   elements.form.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/**
+ * Read the currently selected filter values.
+ * @returns {{ type: string, category: string }}
+ */
+export function readFilters() {
+  return {
+    type: elements.filterType.value,
+    category: elements.filterCategory.value,
+  };
+}
+
+/**
+ * Attach change listeners to the filter dropdowns.
+ * @param {() => void} onChange
+ */
+export function bindFilters(onChange) {
+  elements.filterType.addEventListener("change", onChange);
+  elements.filterCategory.addEventListener("change", onChange);
 }
 
 /**

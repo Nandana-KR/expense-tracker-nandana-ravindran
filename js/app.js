@@ -13,6 +13,8 @@ import {
   readForm,
   resetForm,
   fillForm,
+  readFilters,
+  bindFilters,
   renderTransactions,
   renderSummary,
   bindListActions,
@@ -22,11 +24,32 @@ import {
 let editingId = null;
 
 /**
- * Re-render everything that depends on the transaction data.
+ * Apply the active type and category filters to a list of transactions.
+ * @param {Array} transactions
+ * @returns {Array}
+ */
+function applyFilters(transactions) {
+  const { type, category } = readFilters();
+
+  return transactions.filter((t) => {
+    const matchesType = type === "all" || t.type === type;
+    const matchesCategory = category === "all" || t.category === category;
+    return matchesType && matchesCategory;
+  });
+}
+
+/**
+ * Re-render everything. Totals always reflect ALL transactions, while the
+ * list reflects the current filters.
  */
 function render() {
-  renderTransactions(getTransactions());
+  const all = getTransactions();
+  const visible = applyFilters(all);
+
+  renderTransactions(visible);
   renderSummary(getSummary());
+
+  console.log(`[app] Showing ${visible.length} of ${all.length} transaction(s)`);
 }
 
 /**
@@ -98,6 +121,7 @@ function init() {
     onDelete: handleDeleteTransaction,
     onEdit: handleEditTransaction,
   });
+  bindFilters(render);
 
   // Initial paint from saved data.
   render();

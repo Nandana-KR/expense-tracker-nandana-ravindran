@@ -172,6 +172,13 @@ body {
 }
 
 /* ===== Transaction list ===== */
+.filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .transaction-list {
   list-style: none;
   display: flex;
@@ -268,6 +275,10 @@ body {
   }
 
   .form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .filters {
     grid-template-columns: 1fr;
   }
 }
