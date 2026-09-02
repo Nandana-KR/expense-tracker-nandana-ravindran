@@ -178,6 +178,7 @@ export function resetForm() {
   // After reset the type falls back to its first option, so refresh categories.
   populateCategoryOptions(elements.type.value);
   elements.submitButton.textContent = "Add Transaction";
+  clearErrors();
 }
 
 /**
@@ -194,6 +195,36 @@ export function fillForm(transaction) {
   elements.description.value = transaction.description;
   elements.submitButton.textContent = "Update Transaction";
   elements.form.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/**
+ * Show validation error messages under their fields and highlight the inputs.
+ * @param {Record<string, string>} errors - field -> message
+ */
+export function showErrors(errors) {
+  // Clear existing errors first.
+  clearErrors();
+
+  for (const [field, message] of Object.entries(errors)) {
+    const slot = document.querySelector(`[data-error-for="${field}"]`);
+    if (slot) slot.textContent = message;
+
+    const input = elements[field];
+    if (input) input.classList.add("input--invalid");
+  }
+  console.warn("[ui] Validation errors shown:", errors);
+}
+
+/**
+ * Remove all validation error messages and highlights.
+ */
+export function clearErrors() {
+  document.querySelectorAll(".form__error").forEach((el) => {
+    el.textContent = "";
+  });
+  ["amount", "category", "date", "description"].forEach((field) => {
+    elements[field]?.classList.remove("input--invalid");
+  });
 }
 
 /**

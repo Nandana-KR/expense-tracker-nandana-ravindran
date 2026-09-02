@@ -150,6 +150,17 @@ body {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+.form__error {
+  color: var(--color-expense);
+  font-size: 0.78rem;
+  min-height: 1rem;
+}
+
+.input--invalid {
+  border-color: var(--color-expense) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
+
 /* ===== Buttons ===== */
 .btn {
   padding: 0.7rem 1rem;

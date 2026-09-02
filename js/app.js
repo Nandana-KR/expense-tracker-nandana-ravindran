@@ -21,7 +21,10 @@ import {
   renderTransactions,
   renderSummary,
   bindListActions,
+  showErrors,
+  clearErrors,
 } from "./ui.js";
+import { validateTransaction } from "./validation.js";
 
 // Tracks which transaction is being edited. null means we are adding a new one.
 let editingId = null;
@@ -64,6 +67,14 @@ function handleSubmit(event) {
   event.preventDefault(); // stop the browser from reloading the page
 
   const data = readForm();
+
+  // Validate before doing anything. Stop and show messages if invalid.
+  const errors = validateTransaction(data);
+  if (Object.keys(errors).length > 0) {
+    showErrors(errors);
+    return;
+  }
+  clearErrors();
 
   if (editingId) {
     console.log("[app] Updating transaction:", editingId, data);
@@ -124,6 +135,8 @@ function init() {
   populateFilterCategories();
 
   elements.form.addEventListener("submit", handleSubmit);
+  // Clear all error highlights as soon as the user edits any field.
+  elements.form.addEventListener("input", clearErrors);
   bindTypeChange();
   bindListActions({
     onDelete: handleDeleteTransaction,
