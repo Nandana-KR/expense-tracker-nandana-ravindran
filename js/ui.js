@@ -1,26 +1,48 @@
 // ui.js
-// Responsible for reading from and writing to the DOM. It does not hold data
-// or business logic, it just reflects state onto the page and reads user input.
+// Responsible for reading from and writing to the DOM. It holds no business
+// data, it only reflects state onto the page and reads user input.
 
 import { CATEGORIES, ALL_CATEGORIES } from "./constants.js";
 
 // Cache references to the elements we interact with often.
 export const elements = {
+  // Add form
   form: document.getElementById("transaction-form"),
   type: document.getElementById("type"),
   amount: document.getElementById("amount"),
   category: document.getElementById("category"),
   date: document.getElementById("date"),
   description: document.getElementById("description"),
-  list: document.getElementById("transaction-list"),
-  emptyState: document.getElementById("empty-state"),
-  balance: document.getElementById("balance"),
-  totalIncome: document.getElementById("total-income"),
-  totalExpense: document.getElementById("total-expense"),
   submitButton: document.querySelector("#transaction-form button[type='submit']"),
   cancelButton: document.getElementById("cancel-edit"),
+  typeTabs: document.querySelectorAll(".type-tab"),
+
+  // Transactions view
+  list: document.getElementById("transaction-list"),
+  emptyState: document.getElementById("empty-state"),
   filterType: document.getElementById("filter-type"),
   filterCategory: document.getElementById("filter-category"),
+
+  // Dashboard view
+  statBalance: document.getElementById("stat-balance"),
+  statIncome: document.getElementById("stat-income"),
+  statExpense: document.getElementById("stat-expense"),
+  statCount: document.getElementById("stat-count"),
+  changeBalance: document.getElementById("change-balance"),
+  changeIncome: document.getElementById("change-income"),
+  changeExpense: document.getElementById("change-expense"),
+  recentList: document.getElementById("recent-list"),
+  recentEmpty: document.getElementById("recent-empty"),
+  dashboardChart: document.getElementById("dashboard-chart"),
+  dashboardChartEmpty: document.getElementById("dashboard-chart-empty"),
+
+  // Categories view
+  catExpense: document.getElementById("cat-expense"),
+  catExpenseEmpty: document.getElementById("cat-expense-empty"),
+  catIncome: document.getElementById("cat-income"),
+  catIncomeEmpty: document.getElementById("cat-income-empty"),
+
+  // Reports view
   monthSelect: document.getElementById("month-select"),
   monthIncome: document.getElementById("month-income"),
   monthExpense: document.getElementById("month-expense"),
@@ -30,13 +52,18 @@ export const elements = {
   chartEmpty: document.getElementById("chart-empty"),
 };
 
+/* ============================ Formatting ============================ */
+
 /**
  * Format a number as currency for display.
  * @param {number} value
  * @returns {string}
  */
 export function formatCurrency(value) {
-  return `₹${Number(value).toFixed(2)}`;
+  return `₹${Number(value).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 /**
@@ -56,16 +83,36 @@ function formatDate(isoDate) {
 }
 
 /**
+ * Turn a "YYYY-MM" string into a readable label like "March 2026".
+ * @param {string} month
+ * @returns {string}
+ */
+function formatMonthLabel(month) {
+  const [year, m] = month.split("-");
+  const date = new Date(Number(year), Number(m) - 1, 1);
+  return date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+}
+
+/* ============================ Transaction list ============================ */
+
+/**
  * Build a single transaction list item element.
  * @param {object} transaction
+ * @param {boolean} [withActions] - include edit/delete buttons
  * @returns {HTMLLIElement}
  */
-function createTransactionItem(transaction) {
+function createTransactionItem(transaction, withActions = true) {
   const li = document.createElement("li");
   li.className = `transaction transaction--${transaction.type}`;
   li.dataset.id = transaction.id;
 
   const sign = transaction.type === "income" ? "+" : "-";
+  const actions = withActions
+    ? `<div class="transaction__actions">
+         <button type="button" class="btn-icon" data-action="edit" aria-label="Edit transaction">&#9998;</button>
+         <button type="button" class="btn-icon" data-action="delete" aria-label="Delete transaction">&times;</button>
+       </div>`
+    : "";
 
   li.innerHTML = `
     <div class="transaction__info">
@@ -73,18 +120,13 @@ function createTransactionItem(transaction) {
       <span class="transaction__meta">${transaction.category} &middot; ${formatDate(transaction.date)}</span>
     </div>
     <span class="transaction__amount">${sign}${formatCurrency(transaction.amount)}</span>
-    <div class="transaction__actions">
-      <button type="button" class="btn-icon" data-action="edit" aria-label="Edit transaction">&#9998;</button>
-      <button type="button" class="btn-icon" data-action="delete" aria-label="Delete transaction">&times;</button>
-    </div>
+    ${actions}
   `;
-
   return li;
 }
 
 /**
- * Render the full list of transactions into the page.
- * Shows the empty state when there are none.
+ * Render the full (filtered) transaction list in the Transactions view.
  * @param {Array} transactions
  */
 export function renderTransactions(transactions) {
@@ -97,146 +139,101 @@ export function renderTransactions(transactions) {
       elements.filterCategory.value !== "all";
     elements.emptyState.textContent = filtersActive
       ? "No transactions match the selected filters."
-      : "No transactions yet. Add one above to get started.";
-    console.log("[ui] No transactions to render, showing empty state");
+      : "No transactions yet. Add one to get started.";
     return;
   }
 
   elements.emptyState.style.display = "none";
-
-  // Newest first.
-  const ordered = [...transactions].reverse();
-  for (const transaction of ordered) {
-    elements.list.appendChild(createTransactionItem(transaction));
-  }
-
+  [...transactions].reverse().forEach((t) => {
+    elements.list.appendChild(createTransactionItem(t, true));
+  });
   console.log(`[ui] Rendered ${transactions.length} transaction(s)`);
 }
 
 /**
- * Render the income, expense and balance totals into the summary cards.
- * @param {{income:number, expense:number, balance:number}} summary
+ * Render the most recent transactions on the dashboard (read-only).
+ * @param {Array} transactions
+ * @param {number} [limit]
  */
-export function renderSummary(summary) {
-  elements.totalIncome.textContent = formatCurrency(summary.income);
-  elements.totalExpense.textContent = formatCurrency(summary.expense);
-  elements.balance.textContent = formatCurrency(summary.balance);
-  console.log("[ui] Rendered summary:", summary);
-}
+export function renderRecent(transactions, limit = 5) {
+  elements.recentList.innerHTML = "";
+  const recent = [...transactions].reverse().slice(0, limit);
 
-/**
- * Populate the form's category dropdown with the categories that belong to
- * the given transaction type (income or expense).
- * @param {string} type
- * @param {string} [selected] - a category to keep selected if it still exists
- */
-export function populateCategoryOptions(type, selected) {
-  const categories = CATEGORIES[type] || [];
-  elements.category.innerHTML =
-    `<option value="">Select category</option>` +
-    categories
-      .map((c) => `<option value="${c}">${c}</option>`)
-      .join("");
-
-  if (selected && categories.includes(selected)) {
-    elements.category.value = selected;
-  }
-  console.log(`[ui] Category options set for type "${type}"`);
-}
-
-/**
- * Populate the filter category dropdown with every possible category.
- */
-export function populateFilterCategories() {
-  elements.filterCategory.innerHTML =
-    `<option value="all">All categories</option>` +
-    ALL_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join("");
-}
-
-/**
- * Attach a listener that repopulates categories whenever the type changes.
- * @param {() => void} [onChange]
- */
-export function bindTypeChange(onChange) {
-  elements.type.addEventListener("change", () => {
-    populateCategoryOptions(elements.type.value);
-    if (onChange) onChange();
+  elements.recentEmpty.style.display = recent.length ? "none" : "block";
+  recent.forEach((t) => {
+    elements.recentList.appendChild(createTransactionItem(t, false));
   });
 }
 
-/**
- * Turn a "YYYY-MM" string into a readable label like "March 2026".
- * @param {string} month
- * @returns {string}
- */
-function formatMonthLabel(month) {
-  const [year, m] = month.split("-");
-  const date = new Date(Number(year), Number(m) - 1, 1);
-  return date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
-}
+/* ============================ Dashboard stats ============================ */
 
 /**
- * Populate the month dropdown, keeping the current selection if possible.
- * @param {string[]} months - list of "YYYY-MM" strings, newest first
+ * Format a percentage-change value into a labelled string with direction.
+ * @param {number|null} value
+ * @param {boolean} [invert] - for expenses, a rise is "bad" (down is good)
+ * @returns {{text:string, cls:string}}
  */
-export function populateMonths(months) {
-  const previous = elements.monthSelect.value;
-  elements.monthSelect.innerHTML = months
-    .map((m) => `<option value="${m}">${formatMonthLabel(m)}</option>`)
-    .join("");
-
-  if (months.includes(previous)) {
-    elements.monthSelect.value = previous;
+function formatChange(value, invert = false) {
+  if (value === null || Number.isNaN(value)) {
+    return { text: "no prior month", cls: "stat-card__change--muted" };
   }
+  const rounded = Math.round(value * 10) / 10;
+  const up = rounded >= 0;
+  const arrow = up ? "▲" : "▼";
+  const positive = invert ? !up : up;
+  const cls = positive ? "stat-card__change--up" : "stat-card__change--down";
+  return {
+    text: `${arrow} ${Math.abs(rounded)}% from last month`,
+    cls,
+  };
 }
 
 /**
- * Get the currently selected month, or null if none.
- * @returns {string|null}
+ * Render the four dashboard stat cards.
+ * @param {object} stats - from state.getDashboardStats()
  */
-export function getSelectedMonth() {
-  return elements.monthSelect.value || null;
+export function renderDashboardStats(stats) {
+  elements.statBalance.textContent = formatCurrency(stats.balance);
+  elements.statIncome.textContent = formatCurrency(stats.income);
+  elements.statExpense.textContent = formatCurrency(stats.expense);
+  elements.statCount.textContent = String(stats.count);
+
+  const b = formatChange(stats.change.balance);
+  const i = formatChange(stats.change.income);
+  const e = formatChange(stats.change.expense, true);
+
+  applyChange(elements.changeBalance, b);
+  applyChange(elements.changeIncome, i);
+  applyChange(elements.changeExpense, e);
 }
 
-/**
- * Render the monthly summary totals, or an empty message if no month data.
- * @param {{income:number, expense:number, balance:number}|null} summary
- */
-export function renderMonthlySummary(summary) {
-  const hasData = summary !== null;
-  const totals = document.querySelector(".monthly__totals");
-  elements.monthSelect.style.display = hasData ? "" : "none";
-  if (totals) totals.style.display = hasData ? "grid" : "none";
-  elements.monthlyEmpty.style.display = hasData ? "none" : "block";
-
-  if (!hasData) return;
-
-  elements.monthIncome.textContent = formatCurrency(summary.income);
-  elements.monthExpense.textContent = formatCurrency(summary.expense);
-  elements.monthNet.textContent = formatCurrency(summary.balance);
-  console.log("[ui] Rendered monthly summary:", summary);
+function applyChange(el, { text, cls }) {
+  el.textContent = text;
+  el.className = `stat-card__change ${cls}`;
 }
 
+/* ============================ Charts ============================ */
+
 /**
- * Render a simple horizontal bar chart of expenses by category.
- * Bars are sized relative to the largest category. Built with plain CSS,
- * no external chart library.
+ * Render a horizontal bar chart of category totals into a container.
+ * Pure CSS bars, no external library.
+ * @param {HTMLElement} container
+ * @param {HTMLElement} emptyEl
  * @param {Array<{category:string, total:number}>} data
  */
-export function renderCategoryChart(data) {
+export function renderBars(container, emptyEl, data) {
   const hasData = data.length > 0;
-  elements.chartBars.style.display = hasData ? "flex" : "none";
-  elements.chartEmpty.style.display = hasData ? "none" : "block";
-
+  container.style.display = hasData ? "flex" : "none";
+  if (emptyEl) emptyEl.style.display = hasData ? "none" : "block";
   if (!hasData) {
-    elements.chartBars.innerHTML = "";
+    container.innerHTML = "";
     return;
   }
 
   const max = Math.max(...data.map((d) => d.total));
   const grandTotal = data.reduce((sum, d) => sum + d.total, 0);
 
-  elements.chartBars.innerHTML = data
+  container.innerHTML = data
     .map((d) => {
       const widthPct = max > 0 ? (d.total / max) * 100 : 0;
       const sharePct = grandTotal > 0 ? Math.round((d.total / grandTotal) * 100) : 0;
@@ -249,26 +246,88 @@ export function renderCategoryChart(data) {
           <div class="chart__track">
             <div class="chart__bar" style="width: ${widthPct}%"></div>
           </div>
-        </div>
-      `;
+        </div>`;
     })
     .join("");
-
-  console.log(`[ui] Rendered category chart with ${data.length} bar(s)`);
 }
 
-/**
- * Attach a change listener to the month dropdown.
- * @param {() => void} onChange
- */
+/* ============================ Reports (monthly) ============================ */
+
+export function populateMonths(months) {
+  const previous = elements.monthSelect.value;
+  elements.monthSelect.innerHTML = months
+    .map((m) => `<option value="${m}">${formatMonthLabel(m)}</option>`)
+    .join("");
+  if (months.includes(previous)) elements.monthSelect.value = previous;
+}
+
+export function getSelectedMonth() {
+  return elements.monthSelect.value || null;
+}
+
+export function renderMonthlySummary(summary) {
+  const hasData = summary !== null;
+  const totals = document.querySelector(".monthly__totals");
+  elements.monthSelect.style.display = hasData ? "" : "none";
+  if (totals) totals.style.display = hasData ? "grid" : "none";
+  elements.monthlyEmpty.style.display = hasData ? "none" : "block";
+  if (!hasData) return;
+
+  elements.monthIncome.textContent = formatCurrency(summary.income);
+  elements.monthExpense.textContent = formatCurrency(summary.expense);
+  elements.monthNet.textContent = formatCurrency(summary.balance);
+}
+
 export function bindMonthChange(onChange) {
   elements.monthSelect.addEventListener("change", onChange);
 }
 
+/* ============================ Form ============================ */
+
+export function populateCategoryOptions(type, selected) {
+  const categories = CATEGORIES[type] || [];
+  elements.category.innerHTML =
+    `<option value="">Select category</option>` +
+    categories.map((c) => `<option value="${c}">${c}</option>`).join("");
+  if (selected && categories.includes(selected)) {
+    elements.category.value = selected;
+  }
+}
+
+export function populateFilterCategories() {
+  elements.filterCategory.innerHTML =
+    `<option value="all">All categories</option>` +
+    ALL_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join("");
+}
+
 /**
- * Read the current values from the transaction form.
- * @returns {{type:string, amount:string, category:string, date:string, description:string}}
+ * Wire the Income/Expense tabs. Switching a tab sets the hidden type input
+ * and repopulates the category options.
+ * @param {() => void} [onChange]
  */
+export function bindTypeTabs(onChange) {
+  elements.typeTabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      elements.typeTabs.forEach((t) => t.classList.remove("is-active"));
+      tab.classList.add("is-active");
+      elements.type.value = tab.dataset.type;
+      populateCategoryOptions(tab.dataset.type);
+      if (onChange) onChange();
+    });
+  });
+}
+
+/**
+ * Programmatically select a type tab (used when editing).
+ * @param {string} type
+ */
+export function setActiveTypeTab(type) {
+  elements.typeTabs.forEach((t) =>
+    t.classList.toggle("is-active", t.dataset.type === type)
+  );
+  elements.type.value = type;
+}
+
 export function readForm() {
   return {
     type: elements.type.value,
@@ -279,22 +338,16 @@ export function readForm() {
   };
 }
 
-/**
- * Reset the form back to its default state and switch it back to "add" mode.
- */
 export function resetForm() {
   elements.form.reset();
-  // After reset the type falls back to its first option, so refresh categories.
-  populateCategoryOptions(elements.type.value);
+  setActiveTypeTab("expense");
+  populateCategoryOptions("expense");
   elements.submitButton.textContent = "Add Transaction";
   elements.cancelButton.hidden = true;
   setDateToToday();
   clearErrors();
 }
 
-/**
- * Default the date field to today's date (YYYY-MM-DD).
- */
 export function setDateToToday() {
   const today = new Date();
   const yyyy = today.getFullYear();
@@ -303,65 +356,42 @@ export function setDateToToday() {
   elements.date.value = `${yyyy}-${mm}-${dd}`;
 }
 
-/**
- * Attach a click handler to the Cancel (edit) button.
- * @param {() => void} onCancel
- */
 export function bindCancelEdit(onCancel) {
   elements.cancelButton.addEventListener("click", onCancel);
 }
 
-/**
- * Fill the form with an existing transaction's values (for editing) and
- * switch the submit button label to "Update Transaction".
- * @param {object} transaction
- */
 export function fillForm(transaction) {
-  elements.type.value = transaction.type;
-  // Repopulate categories for this type, keeping the transaction's category selected.
+  setActiveTypeTab(transaction.type);
   populateCategoryOptions(transaction.type, transaction.category);
   elements.amount.value = transaction.amount;
   elements.date.value = transaction.date;
   elements.description.value = transaction.description;
   elements.submitButton.textContent = "Update Transaction";
   elements.cancelButton.hidden = false;
-  elements.form.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
-/**
- * Show validation error messages under their fields and highlight the inputs.
- * @param {Record<string, string>} errors - field -> message
- */
-export function showErrors(errors) {
-  // Clear existing errors first.
-  clearErrors();
+/* ============================ Validation display ============================ */
 
+export function showErrors(errors) {
+  clearErrors();
   for (const [field, message] of Object.entries(errors)) {
     const slot = document.querySelector(`[data-error-for="${field}"]`);
     if (slot) slot.textContent = message;
-
     const input = elements[field];
     if (input) input.classList.add("input--invalid");
   }
   console.warn("[ui] Validation errors shown:", errors);
 }
 
-/**
- * Remove all validation error messages and highlights.
- */
 export function clearErrors() {
-  document.querySelectorAll(".form__error").forEach((el) => {
-    el.textContent = "";
-  });
+  document.querySelectorAll(".form__error").forEach((el) => (el.textContent = ""));
   ["amount", "category", "date", "description"].forEach((field) => {
     elements[field]?.classList.remove("input--invalid");
   });
 }
 
-/**
- * Read the currently selected filter values.
- * @returns {{ type: string, category: string }}
- */
+/* ============================ Filters & list actions ============================ */
+
 export function readFilters() {
   return {
     type: elements.filterType.value,
@@ -369,34 +399,19 @@ export function readFilters() {
   };
 }
 
-/**
- * Attach change listeners to the filter dropdowns.
- * @param {() => void} onChange
- */
 export function bindFilters(onChange) {
   elements.filterType.addEventListener("change", onChange);
   elements.filterCategory.addEventListener("change", onChange);
 }
 
-/**
- * Attach a single delegated click listener to the transaction list.
- * Calls the given handlers with the transaction id when an action is clicked.
- * @param {{ onDelete: (id:string) => void, onEdit: (id:string) => void }} handlers
- */
 export function bindListActions({ onDelete, onEdit }) {
   elements.list.addEventListener("click", (event) => {
     const button = event.target.closest("[data-action]");
     if (!button) return;
-
     const item = event.target.closest(".transaction");
     const id = item?.dataset.id;
     if (!id) return;
-
-    const action = button.dataset.action;
-    if (action === "delete") {
-      onDelete(id);
-    } else if (action === "edit") {
-      onEdit(id);
-    }
+    if (button.dataset.action === "delete") onDelete(id);
+    else if (button.dataset.action === "edit") onEdit(id);
   });
 }

@@ -4,143 +4,237 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Expense Tracker</title>
+  <title>ExpenseTracker</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%92%B0</text></svg>" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
-  <header class="app-header">
-    <h1>Expense Tracker</h1>
-    <p class="app-header__subtitle">Track your income and expenses</p>
-  </header>
+  <div class="app">
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar">
+      <div class="sidebar__brand">
+        <span class="sidebar__logo" aria-hidden="true">₹</span>
+        <span class="sidebar__name">ExpenseTracker</span>
+      </div>
 
-  <main class="app-main">
-    <!-- Summary: total income, expense and balance -->
-    <section class="summary" aria-label="Financial summary">
-      <div class="summary__card summary__card--balance">
-        <span class="summary__label">Balance</span>
-        <span class="summary__value" id="balance">₹0.00</span>
-      </div>
-      <div class="summary__card summary__card--income">
-        <span class="summary__label">Income</span>
-        <span class="summary__value" id="total-income">₹0.00</span>
-      </div>
-      <div class="summary__card summary__card--expense">
-        <span class="summary__label">Expense</span>
-        <span class="summary__value" id="total-expense">₹0.00</span>
-      </div>
-    </section>
+      <nav class="sidebar__nav">
+        <button class="nav-item is-active" data-view="dashboard">
+          <span class="nav-item__icon">▤</span> Dashboard
+        </button>
+        <button class="nav-item" data-view="transactions">
+          <span class="nav-item__icon">≣</span> Transactions
+        </button>
+        <button class="nav-item" data-view="add">
+          <span class="nav-item__icon">＋</span> Add Transaction
+        </button>
+        <button class="nav-item" data-view="categories">
+          <span class="nav-item__icon">◲</span> Categories
+        </button>
+        <button class="nav-item" data-view="reports">
+          <span class="nav-item__icon">▦</span> Reports
+        </button>
+      </nav>
 
-    <!-- Monthly summary -->
-    <section class="monthly" aria-label="Monthly summary">
-      <div class="monthly__header">
-        <h2 class="section-title">Monthly Summary</h2>
-        <select id="month-select" aria-label="Select month">
-          <!-- Months are populated by JavaScript -->
-        </select>
+      <div class="sidebar__footer">
+        <button id="theme-toggle" class="theme-toggle" type="button">
+          <span class="theme-toggle__icon">☾</span>
+          <span class="theme-toggle__label">Dark mode</span>
+        </button>
       </div>
-      <div class="monthly__totals">
-        <div class="monthly__item">
-          <span class="monthly__label">Income</span>
-          <span class="monthly__value monthly__value--income" id="month-income">₹0.00</span>
-        </div>
-        <div class="monthly__item">
-          <span class="monthly__label">Expense</span>
-          <span class="monthly__value monthly__value--expense" id="month-expense">₹0.00</span>
-        </div>
-        <div class="monthly__item">
-          <span class="monthly__label">Net</span>
-          <span class="monthly__value" id="month-net">₹0.00</span>
-        </div>
-      </div>
-      <p id="monthly-empty" class="empty-state">No data for this month yet.</p>
+    </aside>
 
-      <div class="chart" aria-label="Expenses by category">
-        <h3 class="chart__title">Expenses by Category</h3>
-        <div id="chart-bars" class="chart__bars"></div>
-        <p id="chart-empty" class="empty-state">No expenses to chart for this month.</p>
-      </div>
-    </section>
+    <!-- ===== Main content ===== -->
+    <main class="content">
+      <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Toggle menu">☰</button>
 
-    <!-- Form: add a transaction -->
-    <section class="form-section" aria-label="Add transaction">
-      <h2 class="section-title">Add Transaction</h2>
-      <form id="transaction-form" class="form" novalidate>
-        <div class="form__row">
-          <div class="form__group">
-            <label for="type">Type</label>
-            <select id="type" name="type">
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </select>
+      <!-- ===== Dashboard view ===== -->
+      <section class="view is-active" data-view="dashboard">
+        <header class="view__header">
+          <h1 class="view__title">Dashboard</h1>
+          <p class="view__subtitle">Overview of your finances</p>
+        </header>
+
+        <div class="stats">
+          <div class="stat-card">
+            <span class="stat-card__label">Total Balance</span>
+            <span class="stat-card__value" id="stat-balance">₹0.00</span>
+            <span class="stat-card__change" id="change-balance"></span>
           </div>
-
-          <div class="form__group">
-            <label for="amount">Amount</label>
-            <input type="number" id="amount" name="amount" placeholder="0.00" step="0.01" />
-            <span class="form__error" data-error-for="amount"></span>
+          <div class="stat-card">
+            <span class="stat-card__label">Total Income</span>
+            <span class="stat-card__value stat-card__value--income" id="stat-income">₹0.00</span>
+            <span class="stat-card__change" id="change-income"></span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">Total Expenses</span>
+            <span class="stat-card__value stat-card__value--expense" id="stat-expense">₹0.00</span>
+            <span class="stat-card__change" id="change-expense"></span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-card__label">Total Transactions</span>
+            <span class="stat-card__value" id="stat-count">0</span>
+            <span class="stat-card__change stat-card__change--muted">all time</span>
           </div>
         </div>
 
-        <div class="form__row">
-          <div class="form__group">
-            <label for="category">Category</label>
-            <select id="category" name="category">
-              <!-- Options are populated by JavaScript based on the selected type -->
-            </select>
-            <span class="form__error" data-error-for="category"></span>
+        <div class="dashboard__grid">
+          <div class="panel">
+            <h2 class="panel__title">Recent Transactions</h2>
+            <ul id="recent-list" class="transaction-list"></ul>
+            <p id="recent-empty" class="empty-state">No transactions yet.</p>
           </div>
-
-          <div class="form__group">
-            <label for="date">Date</label>
-            <input type="date" id="date" name="date" />
-            <span class="form__error" data-error-for="date"></span>
+          <div class="panel">
+            <h2 class="panel__title">Spending by Category</h2>
+            <div id="dashboard-chart" class="chart__bars"></div>
+            <p id="dashboard-chart-empty" class="empty-state">No expenses to chart yet.</p>
           </div>
         </div>
+      </section>
 
-        <div class="form__group">
-          <label for="description">Description</label>
-          <input type="text" id="description" name="description" placeholder="e.g. Lunch with team" />
-          <span class="form__error" data-error-for="description"></span>
+      <!-- ===== Transactions view ===== -->
+      <section class="view" data-view="transactions">
+        <header class="view__header">
+          <h1 class="view__title">Transactions</h1>
+          <p class="view__subtitle">All your income and expenses</p>
+        </header>
+
+        <div class="panel">
+          <div class="filters">
+            <div class="field">
+              <label for="filter-type">Filter by type</label>
+              <select id="filter-type">
+                <option value="all">All</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="filter-category">Filter by category</label>
+              <select id="filter-category">
+                <option value="all">All categories</option>
+              </select>
+            </div>
+          </div>
+
+          <ul id="transaction-list" class="transaction-list"></ul>
+          <p id="empty-state" class="empty-state">
+            No transactions yet. Add one to get started.
+          </p>
         </div>
+      </section>
 
-        <div class="form__actions">
-          <button type="submit" class="btn btn--primary">Add Transaction</button>
-          <button type="button" id="cancel-edit" class="btn btn--ghost" hidden>Cancel</button>
+      <!-- ===== Add Transaction view ===== -->
+      <section class="view" data-view="add">
+        <header class="view__header">
+          <h1 class="view__title">Add Transaction</h1>
+          <p class="view__subtitle">Record a new income or expense</p>
+        </header>
+
+        <div class="panel form-panel">
+          <div class="type-tabs" role="tablist">
+            <button type="button" class="type-tab is-active" data-type="expense" role="tab">
+              Expense
+            </button>
+            <button type="button" class="type-tab" data-type="income" role="tab">
+              Income
+            </button>
+          </div>
+
+          <form id="transaction-form" class="form" novalidate>
+            <input type="hidden" id="type" name="type" value="expense" />
+
+            <div class="field">
+              <label for="amount">Amount</label>
+              <input type="number" id="amount" name="amount" placeholder="0.00" step="0.01" />
+              <span class="form__error" data-error-for="amount"></span>
+            </div>
+
+            <div class="field">
+              <label for="category">Category</label>
+              <select id="category" name="category"></select>
+              <span class="form__error" data-error-for="category"></span>
+            </div>
+
+            <div class="field">
+              <label for="date">Date</label>
+              <input type="date" id="date" name="date" />
+              <span class="form__error" data-error-for="date"></span>
+            </div>
+
+            <div class="field">
+              <label for="description">Description</label>
+              <input type="text" id="description" name="description" placeholder="e.g. Lunch with team" />
+              <span class="form__error" data-error-for="description"></span>
+            </div>
+
+            <div class="form__actions">
+              <button type="submit" class="btn btn--primary">Add Transaction</button>
+              <button type="button" id="cancel-edit" class="btn btn--ghost" hidden>Cancel</button>
+            </div>
+          </form>
         </div>
-      </form>
-    </section>
+      </section>
 
-    <!-- Transaction list -->
-    <section class="list-section" aria-label="Transactions">
-      <h2 class="section-title">Transactions</h2>
+      <!-- ===== Categories view ===== -->
+      <section class="view" data-view="categories">
+        <header class="view__header">
+          <h1 class="view__title">Categories</h1>
+          <p class="view__subtitle">Where your money goes and comes from</p>
+        </header>
 
-      <div class="filters">
-        <div class="form__group">
-          <label for="filter-type">Filter by type</label>
-          <select id="filter-type">
-            <option value="all">All</option>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
+        <div class="dashboard__grid">
+          <div class="panel">
+            <h2 class="panel__title">Expenses by Category</h2>
+            <div id="cat-expense" class="chart__bars"></div>
+            <p id="cat-expense-empty" class="empty-state">No expenses yet.</p>
+          </div>
+          <div class="panel">
+            <h2 class="panel__title">Income by Category</h2>
+            <div id="cat-income" class="chart__bars"></div>
+            <p id="cat-income-empty" class="empty-state">No income yet.</p>
+          </div>
         </div>
-        <div class="form__group">
-          <label for="filter-category">Filter by category</label>
-          <select id="filter-category">
-            <option value="all">All categories</option>
-            <!-- Category options are populated by JavaScript -->
-          </select>
-        </div>
-      </div>
+      </section>
 
-      <ul id="transaction-list" class="transaction-list">
-        <!-- Transactions will be rendered here by JavaScript -->
-      </ul>
-      <p id="empty-state" class="empty-state">
-        No transactions yet. Add one above to get started.
-      </p>
-    </section>
-  </main>
+      <!-- ===== Reports view ===== -->
+      <section class="view" data-view="reports">
+        <header class="view__header">
+          <h1 class="view__title">Reports</h1>
+          <p class="view__subtitle">Monthly breakdown</p>
+        </header>
+
+        <div class="panel">
+          <div class="panel__header">
+            <h2 class="panel__title">Monthly Summary</h2>
+            <select id="month-select" aria-label="Select month"></select>
+          </div>
+          <div class="monthly__totals">
+            <div class="monthly__item">
+              <span class="monthly__label">Income</span>
+              <span class="monthly__value monthly__value--income" id="month-income">₹0.00</span>
+            </div>
+            <div class="monthly__item">
+              <span class="monthly__label">Expense</span>
+              <span class="monthly__value monthly__value--expense" id="month-expense">₹0.00</span>
+            </div>
+            <div class="monthly__item">
+              <span class="monthly__label">Net</span>
+              <span class="monthly__value" id="month-net">₹0.00</span>
+            </div>
+          </div>
+          <p id="monthly-empty" class="empty-state">No data for this month yet.</p>
+
+          <div class="chart">
+            <h3 class="chart__title">Expenses by Category</h3>
+            <div id="chart-bars" class="chart__bars"></div>
+            <p id="chart-empty" class="empty-state">No expenses to chart for this month.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script type="module" src="js/app.js"></script>
 </body>
