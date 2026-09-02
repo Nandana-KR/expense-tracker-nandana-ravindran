@@ -121,3 +121,37 @@ export function getSummary() {
   console.log("[state] Summary computed:", summary);
   return summary;
 }
+
+/**
+ * List the distinct months (YYYY-MM) that have transactions, newest first.
+ * @returns {string[]}
+ */
+export function getAvailableMonths() {
+  const months = new Set();
+  for (const t of transactions) {
+    if (t.date && t.date.length >= 7) {
+      months.add(t.date.slice(0, 7)); // "YYYY-MM"
+    }
+  }
+  return [...months].sort().reverse();
+}
+
+/**
+ * Compute income, expense and balance for a single month.
+ * @param {string} month - in "YYYY-MM" format
+ * @returns {{income:number, expense:number, balance:number}}
+ */
+export function getMonthlySummary(month) {
+  let income = 0;
+  let expense = 0;
+
+  for (const t of transactions) {
+    if (!t.date || t.date.slice(0, 7) !== month) continue;
+    if (t.type === "income") income += t.amount;
+    else if (t.type === "expense") expense += t.amount;
+  }
+
+  const summary = { income, expense, balance: income - expense };
+  console.log(`[state] Monthly summary for ${month}:`, summary);
+  return summary;
+}

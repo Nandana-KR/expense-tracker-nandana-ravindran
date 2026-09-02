@@ -7,6 +7,8 @@ import {
   getSummary,
   deleteTransaction,
   updateTransaction,
+  getAvailableMonths,
+  getMonthlySummary,
 } from "./state.js";
 import {
   elements,
@@ -23,6 +25,10 @@ import {
   bindListActions,
   showErrors,
   clearErrors,
+  populateMonths,
+  getSelectedMonth,
+  renderMonthlySummary,
+  bindMonthChange,
 } from "./ui.js";
 import { validateTransaction } from "./validation.js";
 
@@ -54,8 +60,25 @@ function render() {
 
   renderTransactions(visible);
   renderSummary(getSummary());
+  renderMonthly();
 
   console.log(`[app] Showing ${visible.length} of ${all.length} transaction(s)`);
+}
+
+/**
+ * Refresh the monthly summary section: rebuild the month list and show the
+ * totals for the selected month.
+ */
+function renderMonthly() {
+  const months = getAvailableMonths();
+  populateMonths(months);
+
+  const selected = getSelectedMonth();
+  if (!selected) {
+    renderMonthlySummary(null);
+    return;
+  }
+  renderMonthlySummary(getMonthlySummary(selected));
 }
 
 /**
@@ -143,6 +166,7 @@ function init() {
     onEdit: handleEditTransaction,
   });
   bindFilters(render);
+  bindMonthChange(renderMonthly);
 
   // Initial paint from saved data.
   render();

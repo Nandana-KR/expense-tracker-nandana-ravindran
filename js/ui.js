@@ -20,6 +20,11 @@ export const elements = {
   submitButton: document.querySelector("#transaction-form button[type='submit']"),
   filterType: document.getElementById("filter-type"),
   filterCategory: document.getElementById("filter-category"),
+  monthSelect: document.getElementById("month-select"),
+  monthIncome: document.getElementById("month-income"),
+  monthExpense: document.getElementById("month-expense"),
+  monthNet: document.getElementById("month-net"),
+  monthlyEmpty: document.getElementById("monthly-empty"),
 };
 
 /**
@@ -154,6 +159,67 @@ export function bindTypeChange(onChange) {
     populateCategoryOptions(elements.type.value);
     if (onChange) onChange();
   });
+}
+
+/**
+ * Turn a "YYYY-MM" string into a readable label like "March 2026".
+ * @param {string} month
+ * @returns {string}
+ */
+function formatMonthLabel(month) {
+  const [year, m] = month.split("-");
+  const date = new Date(Number(year), Number(m) - 1, 1);
+  return date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+}
+
+/**
+ * Populate the month dropdown, keeping the current selection if possible.
+ * @param {string[]} months - list of "YYYY-MM" strings, newest first
+ */
+export function populateMonths(months) {
+  const previous = elements.monthSelect.value;
+  elements.monthSelect.innerHTML = months
+    .map((m) => `<option value="${m}">${formatMonthLabel(m)}</option>`)
+    .join("");
+
+  if (months.includes(previous)) {
+    elements.monthSelect.value = previous;
+  }
+}
+
+/**
+ * Get the currently selected month, or null if none.
+ * @returns {string|null}
+ */
+export function getSelectedMonth() {
+  return elements.monthSelect.value || null;
+}
+
+/**
+ * Render the monthly summary totals, or an empty message if no month data.
+ * @param {{income:number, expense:number, balance:number}|null} summary
+ */
+export function renderMonthlySummary(summary) {
+  const hasData = summary !== null;
+  const totals = document.querySelector(".monthly__totals");
+  elements.monthSelect.style.display = hasData ? "" : "none";
+  if (totals) totals.style.display = hasData ? "grid" : "none";
+  elements.monthlyEmpty.style.display = hasData ? "none" : "block";
+
+  if (!hasData) return;
+
+  elements.monthIncome.textContent = formatCurrency(summary.income);
+  elements.monthExpense.textContent = formatCurrency(summary.expense);
+  elements.monthNet.textContent = formatCurrency(summary.balance);
+  console.log("[ui] Rendered monthly summary:", summary);
+}
+
+/**
+ * Attach a change listener to the month dropdown.
+ * @param {() => void} onChange
+ */
+export function bindMonthChange(onChange) {
+  elements.monthSelect.addEventListener("change", onChange);
 }
 
 /**

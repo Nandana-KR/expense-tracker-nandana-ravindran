@@ -31,6 +31,31 @@
       </div>
     </section>
 
+    <!-- Monthly summary -->
+    <section class="monthly" aria-label="Monthly summary">
+      <div class="monthly__header">
+        <h2 class="section-title">Monthly Summary</h2>
+        <select id="month-select" aria-label="Select month">
+          <!-- Months are populated by JavaScript -->
+        </select>
+      </div>
+      <div class="monthly__totals">
+        <div class="monthly__item">
+          <span class="monthly__label">Income</span>
+          <span class="monthly__value monthly__value--income" id="month-income">₹0.00</span>
+        </div>
+        <div class="monthly__item">
+          <span class="monthly__label">Expense</span>
+          <span class="monthly__value monthly__value--expense" id="month-expense">₹0.00</span>
+        </div>
+        <div class="monthly__item">
+          <span class="monthly__label">Net</span>
+          <span class="monthly__value" id="month-net">₹0.00</span>
+        </div>
+      </div>
+      <p id="monthly-empty" class="empty-state">No data for this month yet.</p>
+    </section>
+
     <!-- Form: add a transaction -->
     <section class="form-section" aria-label="Add transaction">
       <h2 class="section-title">Add Transaction</h2>

@@ -100,6 +100,70 @@ body {
   color: var(--color-expense);
 }
 
+/* ===== Monthly summary ===== */
+.monthly {
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.25rem;
+}
+
+.monthly__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.monthly__header .section-title {
+  margin-bottom: 0;
+}
+
+.monthly__header select {
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background-color: #fff;
+}
+
+.monthly__totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.monthly__item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  text-align: center;
+  padding: 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.monthly__label {
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.monthly__value {
+  font-weight: 700;
+}
+
+.monthly__value--income {
+  color: var(--color-income);
+}
+
+.monthly__value--expense {
+  color: var(--color-expense);
+}
+
 /* ===== Form ===== */
 .form-section,
 .list-section {
@@ -290,6 +354,10 @@ body {
   }
 
   .filters {
+    grid-template-columns: 1fr;
+  }
+
+  .monthly__totals {
     grid-template-columns: 1fr;
   }
 }
