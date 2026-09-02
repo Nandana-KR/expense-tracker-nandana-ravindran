@@ -15,6 +15,7 @@ export const elements = {
   balance: document.getElementById("balance"),
   totalIncome: document.getElementById("total-income"),
   totalExpense: document.getElementById("total-expense"),
+  submitButton: document.querySelector("#transaction-form button[type='submit']"),
 };
 
 /**
@@ -61,6 +62,7 @@ function createTransactionItem(transaction) {
     </div>
     <span class="transaction__amount">${sign}${formatCurrency(transaction.amount)}</span>
     <div class="transaction__actions">
+      <button type="button" class="btn-icon" data-action="edit" aria-label="Edit transaction">&#9998;</button>
       <button type="button" class="btn-icon" data-action="delete" aria-label="Delete transaction">&times;</button>
     </div>
   `;
@@ -119,18 +121,34 @@ export function readForm() {
 }
 
 /**
- * Reset the form back to its default state after a successful add.
+ * Reset the form back to its default state and switch it back to "add" mode.
  */
 export function resetForm() {
   elements.form.reset();
+  elements.submitButton.textContent = "Add Transaction";
+}
+
+/**
+ * Fill the form with an existing transaction's values (for editing) and
+ * switch the submit button label to "Update Transaction".
+ * @param {object} transaction
+ */
+export function fillForm(transaction) {
+  elements.type.value = transaction.type;
+  elements.amount.value = transaction.amount;
+  elements.category.value = transaction.category;
+  elements.date.value = transaction.date;
+  elements.description.value = transaction.description;
+  elements.submitButton.textContent = "Update Transaction";
+  elements.form.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 /**
  * Attach a single delegated click listener to the transaction list.
  * Calls the given handlers with the transaction id when an action is clicked.
- * @param {{ onDelete: (id:string) => void }} handlers
+ * @param {{ onDelete: (id:string) => void, onEdit: (id:string) => void }} handlers
  */
-export function bindListActions({ onDelete }) {
+export function bindListActions({ onDelete, onEdit }) {
   elements.list.addEventListener("click", (event) => {
     const button = event.target.closest("[data-action]");
     if (!button) return;
@@ -142,6 +160,8 @@ export function bindListActions({ onDelete }) {
     const action = button.dataset.action;
     if (action === "delete") {
       onDelete(id);
+    } else if (action === "edit") {
+      onEdit(id);
     }
   });
 }
