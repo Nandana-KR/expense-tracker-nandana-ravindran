@@ -9,6 +9,7 @@ import {
   updateTransaction,
   getAvailableMonths,
   getMonthlySummary,
+  getExpenseByCategory,
 } from "./state.js";
 import {
   elements,
@@ -28,6 +29,7 @@ import {
   populateMonths,
   getSelectedMonth,
   renderMonthlySummary,
+  renderCategoryChart,
   bindMonthChange,
 } from "./ui.js";
 import { validateTransaction } from "./validation.js";
@@ -76,9 +78,11 @@ function renderMonthly() {
   const selected = getSelectedMonth();
   if (!selected) {
     renderMonthlySummary(null);
+    renderCategoryChart([]);
     return;
   }
   renderMonthlySummary(getMonthlySummary(selected));
+  renderCategoryChart(getExpenseByCategory(selected));
 }
 
 /**

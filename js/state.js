@@ -155,3 +155,25 @@ export function getMonthlySummary(month) {
   console.log(`[state] Monthly summary for ${month}:`, summary);
   return summary;
 }
+
+/**
+ * Sum expenses per category for a given month.
+ * @param {string} month - "YYYY-MM"
+ * @returns {Array<{category:string, total:number}>} sorted by total, high to low
+ */
+export function getExpenseByCategory(month) {
+  const totals = {};
+
+  for (const t of transactions) {
+    if (t.type !== "expense") continue;
+    if (month && (!t.date || t.date.slice(0, 7) !== month)) continue;
+    totals[t.category] = (totals[t.category] || 0) + t.amount;
+  }
+
+  const result = Object.entries(totals)
+    .map(([category, total]) => ({ category, total }))
+    .sort((a, b) => b.total - a.total);
+
+  console.log(`[state] Expense by category for ${month}:`, result);
+  return result;
+}

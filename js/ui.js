@@ -25,6 +25,8 @@ export const elements = {
   monthExpense: document.getElementById("month-expense"),
   monthNet: document.getElementById("month-net"),
   monthlyEmpty: document.getElementById("monthly-empty"),
+  chartBars: document.getElementById("chart-bars"),
+  chartEmpty: document.getElementById("chart-empty"),
 };
 
 /**
@@ -212,6 +214,46 @@ export function renderMonthlySummary(summary) {
   elements.monthExpense.textContent = formatCurrency(summary.expense);
   elements.monthNet.textContent = formatCurrency(summary.balance);
   console.log("[ui] Rendered monthly summary:", summary);
+}
+
+/**
+ * Render a simple horizontal bar chart of expenses by category.
+ * Bars are sized relative to the largest category. Built with plain CSS,
+ * no external chart library.
+ * @param {Array<{category:string, total:number}>} data
+ */
+export function renderCategoryChart(data) {
+  const hasData = data.length > 0;
+  elements.chartBars.style.display = hasData ? "flex" : "none";
+  elements.chartEmpty.style.display = hasData ? "none" : "block";
+
+  if (!hasData) {
+    elements.chartBars.innerHTML = "";
+    return;
+  }
+
+  const max = Math.max(...data.map((d) => d.total));
+  const grandTotal = data.reduce((sum, d) => sum + d.total, 0);
+
+  elements.chartBars.innerHTML = data
+    .map((d) => {
+      const widthPct = max > 0 ? (d.total / max) * 100 : 0;
+      const sharePct = grandTotal > 0 ? Math.round((d.total / grandTotal) * 100) : 0;
+      return `
+        <div class="chart__row">
+          <div class="chart__meta">
+            <span class="chart__category">${d.category}</span>
+            <span class="chart__amount">${formatCurrency(d.total)} (${sharePct}%)</span>
+          </div>
+          <div class="chart__track">
+            <div class="chart__bar" style="width: ${widthPct}%"></div>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+
+  console.log(`[ui] Rendered category chart with ${data.length} bar(s)`);
 }
 
 /**
