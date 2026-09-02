@@ -18,7 +18,6 @@ import {
   resetForm,
   fillForm,
   readFilters,
-  bindFilters,
   bindTypeTabs,
   populateCategoryOptions,
   populateFilterCategories,
@@ -29,15 +28,18 @@ import {
   renderDonut,
   bindDonutScope,
   getDonutScope,
-  bindListActions,
   showErrors,
   clearErrors,
   populateMonths,
+  populateMonthFilter,
   getSelectedMonth,
   renderMonthlySummary,
   bindMonthChange,
   bindCancelEdit,
   setDateToToday,
+  bindTxControls,
+  bindLoadMore,
+  bindTableActions,
 } from "./ui.js";
 import { validateTransaction } from "./validation.js";
 import { initRouter, showView } from "./router.js";
@@ -46,15 +48,36 @@ import { initTheme, bindThemeToggle } from "./theme.js";
 // Tracks which transaction is being edited. null means adding a new one.
 let editingId = null;
 
+// How many transactions are shown in the table (for load-more pagination).
+const PAGE_SIZE = 10;
+let visibleCount = PAGE_SIZE;
+
 /* ============================ Rendering ============================ */
 
 function applyFilters(transactions) {
-  const { type, category } = readFilters();
+  const { type, category, month, search } = readFilters();
   return transactions.filter((t) => {
     const matchesType = type === "all" || t.type === type;
     const matchesCategory = category === "all" || t.category === category;
-    return matchesType && matchesCategory;
+    const matchesMonth = month === "all" || (t.date && t.date.slice(0, 7) === month);
+    const haystack = `${t.description} ${t.category}`.toLowerCase();
+    const matchesSearch = !search || haystack.includes(search);
+    return matchesType && matchesCategory && matchesMonth && matchesSearch;
   });
+}
+
+/** Render just the transactions table (used on filter/search/load-more). */
+function renderTable() {
+  const filtered = applyFilters(getTransactions());
+  const totals = filtered.reduce(
+    (acc, t) => {
+      if (t.type === "income") acc.income += t.amount;
+      else acc.expense += t.amount;
+      return acc;
+    },
+    { income: 0, expense: 0 }
+  );
+  renderTransactions(filtered, visibleCount, totals);
 }
 
 /** Re-render every view so the UI always reflects current data. */
@@ -67,7 +90,8 @@ function renderAll() {
   renderDonutChart();
 
   // Transactions
-  renderTransactions(applyFilters(all));
+  populateMonthFilter(getAvailableMonths());
+  renderTable();
 
   // Categories
   renderBars(elements.catExpense, elements.catExpenseEmpty, getTotalsByCategory("expense"));
@@ -170,11 +194,19 @@ function init() {
   elements.form.addEventListener("input", clearErrors);
   bindTypeTabs();
   bindCancelEdit(handleCancelEdit);
-  bindListActions({
+  bindTableActions({
     onDelete: handleDeleteTransaction,
     onEdit: handleEditTransaction,
   });
-  bindFilters(renderAll);
+  // Any filter/search change resets pagination and re-renders the table.
+  bindTxControls(() => {
+    visibleCount = PAGE_SIZE;
+    renderTable();
+  });
+  bindLoadMore(() => {
+    visibleCount += PAGE_SIZE;
+    renderTable();
+  });
   bindMonthChange(renderReports);
   bindDonutScope(renderDonutChart);
 

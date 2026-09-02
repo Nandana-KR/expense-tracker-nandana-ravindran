@@ -508,6 +508,103 @@ select:focus {
   color: var(--expense);
 }
 
+/* ===================== Transactions toolbar ===================== */
+.tx-toolbar {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.tx-search {
+  min-width: 0;
+}
+
+/* ===================== Transactions table ===================== */
+.tx-table-wrap {
+  overflow-x: auto;
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.tx-table thead th {
+  text-align: left;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.tx-table tbody td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.tx-table tbody tr:hover {
+  background: var(--track);
+}
+
+.tx-table__num {
+  text-align: right;
+}
+
+.tx-table__actions-col {
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.tx-amount {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tx-amount--income {
+  color: var(--income);
+}
+
+.tx-amount--expense {
+  color: var(--expense);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.badge--income {
+  background: rgba(22, 163, 74, 0.12);
+  color: var(--income);
+}
+
+.badge--expense {
+  background: rgba(220, 38, 38, 0.12);
+  color: var(--expense);
+}
+
+.tx-loadmore {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.tx-loadmore .btn {
+  min-width: 160px;
+  flex: none;
+}
+
 /* ===================== Monthly summary ===================== */
 .monthly__totals {
   display: grid;
@@ -739,5 +836,52 @@ select:focus {
 
   .donut__legend {
     width: 100%;
+  }
+
+  .tx-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  /* Turn the table into stacked cards on mobile. */
+  .tx-table thead {
+    display: none;
+  }
+
+  .tx-table,
+  .tx-table tbody,
+  .tx-table tr,
+  .tx-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .tx-table tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .tx-table tbody td {
+    border: none;
+    padding: 0.3rem 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    text-align: right;
+  }
+
+  .tx-table tbody td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  .tx-table__num,
+  .tx-table__actions-col {
+    text-align: right;
   }
 }

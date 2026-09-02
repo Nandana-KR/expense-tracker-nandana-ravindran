@@ -18,10 +18,14 @@ export const elements = {
   typeTabs: document.querySelectorAll(".type-tab"),
 
   // Transactions view
-  list: document.getElementById("transaction-list"),
+  tbody: document.getElementById("tx-tbody"),
   emptyState: document.getElementById("empty-state"),
+  txSummary: document.getElementById("tx-summary"),
+  search: document.getElementById("search"),
   filterType: document.getElementById("filter-type"),
   filterCategory: document.getElementById("filter-category"),
+  filterMonth: document.getElementById("filter-month"),
+  loadMore: document.getElementById("load-more"),
 
   // Dashboard view
   statBalance: document.getElementById("stat-balance"),
@@ -127,28 +131,122 @@ function createTransactionItem(transaction, withActions = true) {
 }
 
 /**
- * Render the full (filtered) transaction list in the Transactions view.
- * @param {Array} transactions
+ * Build a single transaction table row.
+ * @param {object} t
+ * @returns {string} HTML for a <tr>
  */
-export function renderTransactions(transactions) {
-  elements.list.innerHTML = "";
+function createTransactionRow(t) {
+  const sign = t.type === "income" ? "+" : "-";
+  const typeBadge = `<span class="badge badge--${t.type}">${t.type}</span>`;
+  return `
+    <tr data-id="${t.id}">
+      <td data-label="Date">${formatDate(t.date)}</td>
+      <td data-label="Description">${t.description || "—"}</td>
+      <td data-label="Category">${t.category}</td>
+      <td data-label="Type">${typeBadge}</td>
+      <td data-label="Amount" class="tx-table__num tx-amount tx-amount--${t.type}">
+        ${sign}${formatCurrency(t.amount)}
+      </td>
+      <td data-label="Actions" class="tx-table__actions-col">
+        <button type="button" class="btn-icon" data-action="edit" aria-label="Edit">&#9998;</button>
+        <button type="button" class="btn-icon" data-action="delete" aria-label="Delete">&times;</button>
+      </td>
+    </tr>`;
+}
 
-  if (!transactions.length) {
-    elements.emptyState.style.display = "block";
-    const filtersActive =
-      elements.filterType.value !== "all" ||
-      elements.filterCategory.value !== "all";
-    elements.emptyState.textContent = filtersActive
-      ? "No transactions match the selected filters."
-      : "No transactions yet. Add one to get started.";
-    return;
+/**
+ * Render the filtered transactions as a table, limited to `visibleCount`
+ * (for the load-more pagination). Also updates the summary line and the
+ * load-more button.
+ * @param {Array} transactions - already filtered, newest-first order applied here
+ * @param {number} visibleCount - how many to show
+ * @param {{income:number, expense:number}} totals - totals of the filtered set
+ */
+export function renderTransactions(transactions, visibleCount, totals) {
+  const ordered = [...transactions].reverse();
+  const shown = ordered.slice(0, visibleCount);
+
+  elements.tbody.innerHTML = shown.map(createTransactionRow).join("");
+
+  // Empty state.
+  const anyData = transactions.length > 0;
+  elements.emptyState.style.display = anyData ? "none" : "block";
+  const filtersActive =
+    elements.filterType.value !== "all" ||
+    elements.filterCategory.value !== "all" ||
+    elements.filterMonth.value !== "all" ||
+    elements.search.value.trim() !== "";
+  elements.emptyState.textContent = filtersActive
+    ? "No transactions match your search or filters."
+    : "No transactions yet. Add one to get started.";
+
+  // Load-more button.
+  elements.loadMore.hidden = shown.length >= transactions.length;
+
+  // Summary line.
+  const count = transactions.length;
+  elements.txSummary.textContent =
+    `${count} transaction${count === 1 ? "" : "s"} · ` +
+    `Income ${formatCurrency(totals.income)} · Expense ${formatCurrency(totals.expense)}`;
+
+  console.log(`[ui] Rendered ${shown.length} of ${count} transaction(s)`);
+}
+
+/**
+ * Read the search text.
+ * @returns {string}
+ */
+export function getSearchText() {
+  return elements.search.value.trim().toLowerCase();
+}
+
+/**
+ * Populate the month filter dropdown.
+ * @param {string[]} months - "YYYY-MM" list, newest first
+ */
+export function populateMonthFilter(months) {
+  const previous = elements.filterMonth.value;
+  elements.filterMonth.innerHTML =
+    `<option value="all">All months</option>` +
+    months.map((m) => `<option value="${m}">${formatMonthLabel(m)}</option>`).join("");
+  if (previous === "all" || months.includes(previous)) {
+    elements.filterMonth.value = previous;
   }
+}
 
-  elements.emptyState.style.display = "none";
-  [...transactions].reverse().forEach((t) => {
-    elements.list.appendChild(createTransactionItem(t, true));
+/**
+ * Bind search, type, category and month filter changes.
+ * @param {() => void} onChange
+ */
+export function bindTxControls(onChange) {
+  elements.search.addEventListener("input", onChange);
+  elements.filterType.addEventListener("change", onChange);
+  elements.filterCategory.addEventListener("change", onChange);
+  elements.filterMonth.addEventListener("change", onChange);
+}
+
+/**
+ * Bind the load-more button.
+ * @param {() => void} onLoadMore
+ */
+export function bindLoadMore(onLoadMore) {
+  elements.loadMore.addEventListener("click", onLoadMore);
+}
+
+/**
+ * Attach delegated edit/delete handling to the transaction table body.
+ * @param {{onDelete:(id:string)=>void, onEdit:(id:string)=>void}} handlers
+ */
+export function bindTableActions({ onDelete, onEdit }) {
+  elements.tbody.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    const row = event.target.closest("tr");
+    const id = row?.dataset.id;
+    if (!id) return;
+    if (button.dataset.action === "delete") onDelete(id);
+    else if (button.dataset.action === "edit") onEdit(id);
   });
-  console.log(`[ui] Rendered ${transactions.length} transaction(s)`);
 }
 
 /**
@@ -497,22 +595,7 @@ export function readFilters() {
   return {
     type: elements.filterType.value,
     category: elements.filterCategory.value,
+    month: elements.filterMonth.value,
+    search: getSearchText(),
   };
-}
-
-export function bindFilters(onChange) {
-  elements.filterType.addEventListener("change", onChange);
-  elements.filterCategory.addEventListener("change", onChange);
-}
-
-export function bindListActions({ onDelete, onEdit }) {
-  elements.list.addEventListener("click", (event) => {
-    const button = event.target.closest("[data-action]");
-    if (!button) return;
-    const item = event.target.closest(".transaction");
-    const id = item?.dataset.id;
-    if (!id) return;
-    if (button.dataset.action === "delete") onDelete(id);
-    else if (button.dataset.action === "edit") onEdit(id);
-  });
 }
