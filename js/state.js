@@ -177,3 +177,72 @@ export function getExpenseByCategory(month) {
   console.log(`[state] Expense by category for ${month}:`, result);
   return result;
 }
+
+/**
+ * Get the current month and previous month as "YYYY-MM" strings.
+ * @returns {{current:string, previous:string}}
+ */
+function getCurrentAndPreviousMonth() {
+  const now = new Date();
+  const current = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+  const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const previous = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+
+  return { current, previous };
+}
+
+/**
+ * Calculate the percentage change from a previous value to a current value.
+ * Returns null when there is no meaningful comparison (previous is zero).
+ * @param {number} current
+ * @param {number} previous
+ * @returns {number|null}
+ */
+function percentChange(current, previous) {
+  if (previous === 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+/**
+ * Build the dashboard statistics: overall totals plus month-over-month
+ * percentage changes for balance, income and expense.
+ * @returns {object}
+ */
+export function getDashboardStats() {
+  const overall = getSummary();
+  const { current, previous } = getCurrentAndPreviousMonth();
+  const thisMonth = getMonthlySummary(current);
+  const lastMonth = getMonthlySummary(previous);
+
+  const stats = {
+    balance: overall.balance,
+    income: overall.income,
+    expense: overall.expense,
+    count: transactions.length,
+    change: {
+      balance: percentChange(thisMonth.balance, lastMonth.balance),
+      income: percentChange(thisMonth.income, lastMonth.income),
+      expense: percentChange(thisMonth.expense, lastMonth.expense),
+    },
+  };
+
+  console.log("[state] Dashboard stats:", stats);
+  return stats;
+}
+
+/**
+ * Sum amounts per category for a given type, across all time.
+ * @param {"income"|"expense"} type
+ * @returns {Array<{category:string, total:number}>} sorted high to low
+ */
+export function getTotalsByCategory(type) {
+  const totals = {};
+  for (const t of transactions) {
+    if (t.type !== type) continue;
+    totals[t.category] = (totals[t.category] || 0) + t.amount;
+  }
+  return Object.entries(totals)
+    .map(([category, total]) => ({ category, total }))
+    .sort((a, b) => b.total - a.total);
+}
