@@ -12,6 +12,9 @@ export const elements = {
   description: document.getElementById("description"),
   list: document.getElementById("transaction-list"),
   emptyState: document.getElementById("empty-state"),
+  balance: document.getElementById("balance"),
+  totalIncome: document.getElementById("total-income"),
+  totalExpense: document.getElementById("total-expense"),
 };
 
 /**
@@ -85,6 +88,17 @@ export function renderTransactions(transactions) {
   }
 
   console.log(`[ui] Rendered ${transactions.length} transaction(s)`);
+}
+
+/**
+ * Render the income, expense and balance totals into the summary cards.
+ * @param {{income:number, expense:number, balance:number}} summary
+ */
+export function renderSummary(summary) {
+  elements.totalIncome.textContent = formatCurrency(summary.income);
+  elements.totalExpense.textContent = formatCurrency(summary.expense);
+  elements.balance.textContent = formatCurrency(summary.balance);
+  console.log("[ui] Rendered summary:", summary);
 }
 
 /**

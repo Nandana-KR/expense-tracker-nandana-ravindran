@@ -1,15 +1,21 @@
 // app.js
 // Entry point. Wires the modules together and starts the app.
 
-import { addTransaction, getTransactions } from "./state.js";
-import { elements, readForm, resetForm, renderTransactions } from "./ui.js";
+import { addTransaction, getTransactions, getSummary } from "./state.js";
+import {
+  elements,
+  readForm,
+  resetForm,
+  renderTransactions,
+  renderSummary,
+} from "./ui.js";
 
 /**
  * Re-render everything that depends on the transaction data.
  */
 function render() {
-  const transactions = getTransactions();
-  renderTransactions(transactions);
+  renderTransactions(getTransactions());
+  renderSummary(getSummary());
 }
 
 /**
