@@ -1,13 +1,19 @@
 // app.js
 // Entry point. Wires the modules together and starts the app.
 
-import { addTransaction, getTransactions, getSummary } from "./state.js";
+import {
+  addTransaction,
+  getTransactions,
+  getSummary,
+  deleteTransaction,
+} from "./state.js";
 import {
   elements,
   readForm,
   resetForm,
   renderTransactions,
   renderSummary,
+  bindListActions,
 } from "./ui.js";
 
 /**
@@ -33,10 +39,26 @@ function handleAddTransaction(event) {
   render();
 }
 
+/**
+ * Handle deleting a transaction after confirmation.
+ * @param {string} id
+ */
+function handleDeleteTransaction(id) {
+  const confirmed = window.confirm("Delete this transaction?");
+  if (!confirmed) {
+    console.log("[app] Delete cancelled for:", id);
+    return;
+  }
+
+  deleteTransaction(id);
+  render();
+}
+
 function init() {
   console.log("[Expense Tracker] App initialised");
 
   elements.form.addEventListener("submit", handleAddTransaction);
+  bindListActions({ onDelete: handleDeleteTransaction });
 
   // Initial paint from saved data.
   render();

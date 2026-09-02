@@ -60,6 +60,9 @@ function createTransactionItem(transaction) {
       <span class="transaction__meta">${transaction.category} &middot; ${formatDate(transaction.date)}</span>
     </div>
     <span class="transaction__amount">${sign}${formatCurrency(transaction.amount)}</span>
+    <div class="transaction__actions">
+      <button type="button" class="btn-icon" data-action="delete" aria-label="Delete transaction">&times;</button>
+    </div>
   `;
 
   return li;
@@ -120,4 +123,25 @@ export function readForm() {
  */
 export function resetForm() {
   elements.form.reset();
+}
+
+/**
+ * Attach a single delegated click listener to the transaction list.
+ * Calls the given handlers with the transaction id when an action is clicked.
+ * @param {{ onDelete: (id:string) => void }} handlers
+ */
+export function bindListActions({ onDelete }) {
+  elements.list.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+
+    const item = event.target.closest(".transaction");
+    const id = item?.dataset.id;
+    if (!id) return;
+
+    const action = button.dataset.action;
+    if (action === "delete") {
+      onDelete(id);
+    }
+  });
 }

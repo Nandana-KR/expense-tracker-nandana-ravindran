@@ -223,6 +223,29 @@ body {
   white-space: nowrap;
 }
 
+.transaction__actions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn-icon {
+  border: none;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.btn-icon:hover {
+  background-color: #f3f4f6;
+  color: var(--color-expense);
+}
+
 .transaction--income .transaction__amount {
   color: var(--color-income);
 }
