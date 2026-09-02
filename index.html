@@ -86,9 +86,15 @@
             <p id="recent-empty" class="empty-state">No transactions yet.</p>
           </div>
           <div class="panel">
-            <h2 class="panel__title">Spending by Category</h2>
-            <div id="dashboard-chart" class="chart__bars"></div>
-            <p id="dashboard-chart-empty" class="empty-state">No expenses to chart yet.</p>
+            <div class="panel__header">
+              <h2 class="panel__title">Expense Overview</h2>
+              <select id="donut-scope" aria-label="Chart period">
+                <option value="month">This Month</option>
+                <option value="all">All Time</option>
+              </select>
+            </div>
+            <div id="donut" class="donut"></div>
+            <p id="donut-empty" class="empty-state">No expenses to chart yet.</p>
           </div>
         </div>
       </section>

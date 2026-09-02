@@ -33,8 +33,9 @@ export const elements = {
   changeExpense: document.getElementById("change-expense"),
   recentList: document.getElementById("recent-list"),
   recentEmpty: document.getElementById("recent-empty"),
-  dashboardChart: document.getElementById("dashboard-chart"),
-  dashboardChartEmpty: document.getElementById("dashboard-chart-empty"),
+  donut: document.getElementById("donut"),
+  donutEmpty: document.getElementById("donut-empty"),
+  donutScope: document.getElementById("donut-scope"),
 
   // Categories view
   catExpense: document.getElementById("cat-expense"),
@@ -249,6 +250,106 @@ export function renderBars(container, emptyEl, data) {
         </div>`;
     })
     .join("");
+}
+
+/* ============================ Donut chart ============================ */
+
+// A fixed, professional palette. Categories map to colours by their order so
+// the same category keeps the same colour across renders.
+const DONUT_COLORS = [
+  "#2563eb", // blue
+  "#f97316", // orange
+  "#16a34a", // green
+  "#9333ea", // purple
+  "#e11d48", // rose
+  "#0891b2", // cyan
+  "#ca8a04", // amber
+  "#64748b", // slate
+];
+
+/**
+ * Render an expense breakdown donut chart (pure SVG) with a legend.
+ * Total expenses are shown in the centre.
+ * @param {Array<{category:string, total:number}>} data
+ */
+export function renderDonut(data) {
+  const hasData = data.length > 0;
+  elements.donut.style.display = hasData ? "grid" : "none";
+  if (elements.donutEmpty) elements.donutEmpty.style.display = hasData ? "none" : "block";
+  if (!hasData) {
+    elements.donut.innerHTML = "";
+    return;
+  }
+
+  const total = data.reduce((sum, d) => sum + d.total, 0);
+  const radius = 60;
+  const circumference = 2 * Math.PI * radius;
+
+  // Build the coloured arcs using stroke-dasharray/offset.
+  let offset = 0;
+  const segments = data
+    .map((d, i) => {
+      const fraction = total > 0 ? d.total / total : 0;
+      const length = fraction * circumference;
+      const color = DONUT_COLORS[i % DONUT_COLORS.length];
+      const circle = `
+        <circle
+          class="donut__segment"
+          cx="80" cy="80" r="${radius}"
+          fill="none"
+          stroke="${color}"
+          stroke-width="22"
+          stroke-dasharray="${length} ${circumference - length}"
+          stroke-dashoffset="${-offset}"
+        ></circle>`;
+      offset += length;
+      return circle;
+    })
+    .join("");
+
+  // Legend rows: colour dot, category, amount and percentage.
+  const legend = data
+    .map((d, i) => {
+      const pct = total > 0 ? Math.round((d.total / total) * 100) : 0;
+      const color = DONUT_COLORS[i % DONUT_COLORS.length];
+      return `
+        <li class="donut__legend-item">
+          <span class="donut__dot" style="background:${color}"></span>
+          <span class="donut__legend-name">${d.category}</span>
+          <span class="donut__legend-value">${formatCurrency(d.total)} <span class="donut__legend-pct">${pct}%</span></span>
+        </li>`;
+    })
+    .join("");
+
+  elements.donut.innerHTML = `
+    <div class="donut__chart">
+      <svg viewBox="0 0 160 160" class="donut__svg" role="img" aria-label="Expenses by category">
+        <g transform="rotate(-90 80 80)">${segments}</g>
+      </svg>
+      <div class="donut__center">
+        <span class="donut__center-label">Total Expenses</span>
+        <span class="donut__center-value">${formatCurrency(total)}</span>
+      </div>
+    </div>
+    <ul class="donut__legend">${legend}</ul>
+  `;
+  console.log(`[ui] Rendered donut with ${data.length} segment(s), total ${total}`);
+}
+
+/**
+ * Attach a change listener to the donut "This Month / All Time" scope.
+ * @param {() => void} onChange
+ */
+export function bindDonutScope(onChange) {
+  elements.donutScope?.addEventListener("change", onChange);
+}
+
+/**
+ * Read the current donut scope value ("month" or "all").
+ * @returns {string}
+ */
+export function getDonutScope() {
+  return elements.donutScope?.value || "all";
 }
 
 /* ============================ Reports (monthly) ============================ */

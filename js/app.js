@@ -26,6 +26,9 @@ import {
   renderRecent,
   renderDashboardStats,
   renderBars,
+  renderDonut,
+  bindDonutScope,
+  getDonutScope,
   bindListActions,
   showErrors,
   clearErrors,
@@ -61,11 +64,7 @@ function renderAll() {
   // Dashboard
   renderDashboardStats(getDashboardStats());
   renderRecent(all);
-  renderBars(
-    elements.dashboardChart,
-    elements.dashboardChartEmpty,
-    getExpenseByCategory(null)
-  );
+  renderDonutChart();
 
   // Transactions
   renderTransactions(applyFilters(all));
@@ -76,6 +75,19 @@ function renderAll() {
 
   // Reports
   renderReports();
+}
+
+/** Current month as "YYYY-MM". */
+function currentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Render the dashboard donut based on the selected scope (this month / all time). */
+function renderDonutChart() {
+  const scope = getDonutScope();
+  const month = scope === "month" ? currentMonth() : null;
+  renderDonut(getExpenseByCategory(month));
 }
 
 function renderReports() {
@@ -164,6 +176,7 @@ function init() {
   });
   bindFilters(renderAll);
   bindMonthChange(renderReports);
+  bindDonutScope(renderDonutChart);
 
   initRouter();
 
