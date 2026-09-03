@@ -677,9 +677,7 @@ export function renderCategoryCards(categories, statsFor, page = 1, pageSize = 8
     ? `Showing ${from} to ${to} of ${filtered.length} categories`
     : "";
 
-  // Pagination buttons: active page number + prev/next enable state.
-  const activeBtn = document.querySelector(".cat-page-btn--active");
-  if (activeBtn) activeBtn.textContent = String(current);
+  // Pagination: enable/disable Prev/Next.
   if (elements.catPrev) elements.catPrev.disabled = current <= 1;
   if (elements.catNext) elements.catNext.disabled = current >= totalPages;
 

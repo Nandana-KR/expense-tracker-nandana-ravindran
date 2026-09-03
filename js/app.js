@@ -10,6 +10,7 @@ import {
   getMonthlySummary,
   getExpenseByCategory,
   countTransactionsInCategory,
+  getCategoryStats,
 } from "./state.js";
 import {
   getCategories,
@@ -145,29 +146,16 @@ function renderAll() {
   renderTxStats(summarise(ranged));
   renderTable();
 
-  // Categories (counts/totals within range)
+  // Categories: all-time counts/totals (not affected by the month filter).
   categoryPage = renderCategoryCards(
     getCategories(),
-    categoryStatsInRange,
+    getCategoryStats,
     categoryPage,
     CATEGORY_PAGE_SIZE
   );
 
   // Reports
   renderReports();
-}
-
-/** Per-category stats limited to the current date range. */
-function categoryStatsInRange(categoryName) {
-  let count = 0;
-  let total = 0;
-  for (const t of rangedTransactions()) {
-    if (t.category === categoryName) {
-      count += 1;
-      total += t.amount;
-    }
-  }
-  return { count, total };
 }
 
 function renderReports() {
@@ -349,7 +337,7 @@ function init() {
   const renderCats = () => {
     categoryPage = renderCategoryCards(
       getCategories(),
-      categoryStatsInRange,
+      getCategoryStats,
       categoryPage,
       CATEGORY_PAGE_SIZE
     );
@@ -383,7 +371,14 @@ function init() {
   });
   document.getElementById("clear-data")?.addEventListener("click", handleClearData);
 
-  initRouter();
+  // Hide the global month selector on pages where it isn't meaningful.
+  const monthControl = document.querySelector(".topbar .date-select");
+  const applyMonthVisibility = (view) => {
+    const hideOn = view === "categories" || view === "settings";
+    if (monthControl) monthControl.style.display = hideOn ? "none" : "";
+  };
+  initRouter(applyMonthVisibility);
+  applyMonthVisibility("dashboard");
 
   renderAll();
 }

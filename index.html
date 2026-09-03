@@ -305,7 +305,7 @@
             </div>
             <div class="cat-toolbar__right">
               <select id="cat-type-filter" class="cat-type-select">
-                <option value="all">All Categories</option>
+                <option value="all">Category</option>
                 <option value="expense">Expense</option>
                 <option value="income">Income</option>
               </select>
@@ -330,12 +330,11 @@
           </div>
           <p id="category-empty" class="empty-state">No categories match your search.</p>
 
-          <div class="cat-pagination" id="cat-pagination">
-            <span class="cat-pagination__info" id="category-count"></span>
-            <div class="cat-pagination__buttons">
-              <button type="button" id="cat-prev" class="cat-page-btn" aria-label="Previous">‹</button>
-              <button type="button" class="cat-page-btn cat-page-btn--active" aria-current="page">1</button>
-              <button type="button" id="cat-next" class="cat-page-btn" aria-label="Next">›</button>
+          <div class="tx-pagination" id="cat-pagination">
+            <span class="tx-pagination__info" id="category-count"></span>
+            <div class="tx-pagination__buttons">
+              <button type="button" id="cat-prev" class="btn btn--ghost btn--sm">Previous</button>
+              <button type="button" id="cat-next" class="btn btn--ghost btn--sm">Next</button>
             </div>
           </div>
         </div>
