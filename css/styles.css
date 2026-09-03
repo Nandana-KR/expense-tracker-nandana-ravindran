@@ -43,12 +43,24 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  /* Guard against any element pushing the page wider than the viewport. */
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
   background-color: var(--bg);
   color: var(--text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Mobile drawer backdrop (hidden on desktop). */
+.sidebar-backdrop {
+  display: none;
 }
 
 /* ===================== App shell ===================== */
@@ -66,10 +78,10 @@ body {
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1rem;
-  position: sticky;
-  top: 0;
-  height: 100vh;
 }
+
+/* The nav fills available space so the footer (dark mode) sits at the bottom,
+   and the navy background always reaches the full column height. */
 
 .sidebar__brand {
   display: flex;
@@ -407,7 +419,7 @@ body {
 
 .dashboard__grid {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 1fr;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
   gap: 16px;
   align-items: stretch;
 }
@@ -1029,104 +1041,245 @@ select:focus {
   font-size: 0.92rem;
 }
 
-/* ===================== Responsive ===================== */
-@media (max-width: 860px) {
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
+/* ===================== Tablet (<= 1024px) ===================== */
+@media (max-width: 1024px) {
   .dashboard__grid {
     grid-template-columns: 1fr;
   }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-@media (max-width: 680px) {
+/* ===================== Mobile (<= 768px) ===================== */
+@media (max-width: 768px) {
+
+  /* --- Sidebar becomes a slide-in drawer --- */
   .sidebar {
     position: fixed;
     left: 0;
     top: 0;
-    z-index: 20;
+    z-index: 40;
+    width: 260px;
+    max-width: 82vw;
+    height: 100vh;
     transform: translateX(-100%);
-    transition: transform 0.2s ease;
+    transition: transform 0.25s ease;
   }
 
   .sidebar.is-open {
     transform: translateX(0);
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
   }
 
-  .content {
-    padding: 1.25rem;
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(15, 23, 42, 0.45);
+  }
+
+  .sidebar-backdrop[hidden] {
+    display: none;
   }
 
   .sidebar-toggle {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    margin: 0;
+    padding: 0;
+    flex-shrink: 0;
   }
 
+  /* --- Header / top bar: flows normally, wraps if needed --- */
+  .content {
+    position: static;
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .topbar {
+    position: static;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .topbar__spacer {
+    flex: 1;
+  }
+
+  .date-select {
+    height: 40px;
+  }
+
+  .view__header-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .view__title {
+    font-size: 1.5rem;
+  }
+
+  /* --- KPI cards stack --- */
   .stats {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
-  .filters {
-    grid-template-columns: 1fr;
-  }
-
-  .monthly__totals {
-    grid-template-columns: 1fr;
-  }
-
+  /* --- Grids / forms collapse to one column --- */
+  .dashboard__grid,
+  .filters,
+  .monthly__totals,
   .form__row,
-  .field-row {
-    grid-template-columns: 1fr;
+  .field-row,
+  .tx-toolbar,
+  .cat-toolbar {
+    grid-template-columns: 1fr !important;
   }
 
-  .dashboard__grid {
-    grid-template-columns: 1fr;
+  .dashboard__grid .panel {
+    padding: 16px;
   }
 
-  .donut {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+  /* --- Hard guards so nothing exceeds the viewport width --- */
+  .panel,
+  .form,
+  .field,
+  .type-tabs,
+  input,
+  select,
+  .btn,
+  .stat-card {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  input,
+  select,
+  .field {
+    width: 100%;
+  }
+
+  /* Income/Expense toggle: keep both visible, share the row equally. */
+  .type-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .type-tab {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  /* Form action buttons stack full width so they never clip. */
+  .form__actions {
+    flex-direction: column;
+  }
+
+  .form__actions .btn {
+    width: 100%;
+  }
+
+  /* --- Category toolbar stacks; controls full width --- */
+  .cat-toolbar__right {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cat-type-select,
+  .cat-toolbar__right .btn {
+    width: 100%;
+  }
+
+  /* --- Expense Overview: donut on top, legend below, full width ---
+     Uses the same specificity as the desktop `.dashboard__grid .donut`
+     rule so it reliably overrides the two-column grid on mobile. */
+  .donut,
+  .dashboard__grid .donut {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 20px;
+    width: 100%;
+    grid-template-columns: none;
+  }
+
+  .donut__chart {
+    align-self: center;
   }
 
   .donut__legend {
     width: 100%;
+    max-width: 100%;
   }
 
-  .tx-toolbar {
-    grid-template-columns: 1fr;
+  .donut__legend-item {
+    width: 100%;
+    flex-wrap: nowrap;
+    gap: 8px;
   }
 
-  /* Turn the table into stacked cards on mobile. */
-  .tx-table thead {
+  .donut__legend-name {
+    flex: 1;
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .donut__legend-value {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* --- Tables become stacked cards --- */
+  .tx-table thead,
+  .cat-table thead {
     display: none;
   }
 
   .tx-table,
   .tx-table tbody,
   .tx-table tr,
-  .tx-table td {
+  .tx-table td,
+  .cat-table,
+  .cat-table tbody,
+  .cat-table tr,
+  .cat-table td {
     display: block;
     width: 100%;
   }
 
-  .tx-table tr {
+  .tx-table tr,
+  .cat-table tr {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.75rem;
+    padding: 8px 12px;
+    margin-bottom: 12px;
   }
 
-  .tx-table tbody td {
+  .tx-table tbody td,
+  .cat-table tbody td {
     border: none;
-    padding: 0.3rem 0;
+    padding: 6px 0;
     display: flex;
     justify-content: space-between;
-    gap: 1rem;
+    align-items: center;
+    gap: 12px;
     text-align: right;
   }
 
-  .tx-table tbody td::before {
+  .tx-table tbody td::before,
+  .cat-table tbody td::before {
     content: attr(data-label);
     font-size: 0.72rem;
     text-transform: uppercase;
@@ -1135,25 +1288,77 @@ select:focus {
     font-weight: 600;
   }
 
-  .tx-table__num,
-  .tx-table__actions-col {
-    text-align: right;
+  .cat-table tbody td[data-label="Category"] {
+    justify-content: flex-start;
+  }
+
+  .cat-table tbody td[data-label="Category"]::before {
+    display: none;
+  }
+
+  /* Pagination wraps neatly */
+  .tx-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .tx-pagination__buttons {
+    justify-content: space-between;
+  }
+
+  .tx-pagination__buttons .btn {
+    flex: 1;
+  }
+}
+
+/* ===================== Small mobile (<= 400px) ===================== */
+@media (max-width: 400px) {
+  .content {
+    padding: 12px;
+  }
+
+  .view__title {
+    font-size: 1.3rem;
+  }
+
+  .donut__chart {
+    width: 160px;
+    height: 160px;
+  }
+
+  .type-tab {
+    font-size: 0.85rem;
+    padding: 0.55rem 0.4rem;
+  }
+
+  .stat-card__value {
+    font-size: 1.3rem;
   }
 }
 
 /* ===================== Top bar ===================== */
 .topbar {
-  position: absolute;
-  top: 24px;
-  right: 32px;
   display: flex;
   align-items: center;
   gap: 1rem;
-  z-index: 5;
 }
 
 .topbar__spacer {
   flex: 1;
+}
+
+/* On desktop/tablet (>768px) the month selector floats to the top-right of
+   the content, aligned with the page title, so it adds no vertical space.
+   Scoped to min-width so it never overrides the mobile flowing layout. */
+@media (min-width: 769px) {
+  .topbar {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    z-index: 5;
+    margin-bottom: 0;
+  }
 }
 
 
@@ -1508,108 +1713,3 @@ select:focus {
 }
 
 /* ===================== Responsive (new UI) ===================== */
-@media (max-width: 680px) {
-  .cat-toolbar {
-    grid-template-columns: 1fr;
-  }
-
-  /* Category table becomes stacked cards on mobile. */
-  .cat-table thead {
-    display: none;
-  }
-
-  .cat-table,
-  .cat-table tbody,
-  .cat-table tr,
-  .cat-table td {
-    display: block;
-    width: 100%;
-  }
-
-  .cat-table tr {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 0.5rem 0.75rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .cat-table tbody td {
-    border: none;
-    padding: 0.4rem 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1rem;
-    text-align: right;
-  }
-
-  .cat-table tbody td[data-label="Category"] {
-    justify-content: flex-start;
-  }
-
-  .cat-table tbody td::before {
-    content: attr(data-label);
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: var(--muted);
-    font-weight: 600;
-  }
-
-  .cat-table tbody td[data-label="Category"]::before {
-    display: none;
-  }
-
-  .settings-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-/* Compact transaction summary cards — matches the dense four-card reference layout. */
-.stats--compact {
-  gap: 0.7rem;
-  margin-bottom: 1rem;
-}
-
-.stats--compact .stat-card {
-  height: 100px;
-  min-height: 0;
-  padding: 0.75rem 0.9rem;
-  justify-content: space-between;
-  gap: 0;
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-}
-
-.stats--compact .stat-card__top {
-  gap: 0.45rem;
-  margin: 0;
-}
-
-.stats--compact .stat-card__icon {
-  width: 27px;
-  height: 27px;
-  font-size: 0.75rem;
-}
-
-.stats--compact .stat-card__label {
-  font-size: 0.66rem;
-  font-weight: 650;
-}
-
-.stats--compact .stat-card__value {
-  font-size: 1.08rem;
-  line-height: 1;
-}
-
-.stats--compact .stat-card__change {
-  font-size: 0.6rem;
-}
-
-@media (max-width: 680px) {
-  .stats--compact .stat-card {
-    height: auto;
-    min-height: 88px;
-  }
-}
