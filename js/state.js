@@ -246,3 +246,55 @@ export function getTotalsByCategory(type) {
     .map(([category, total]) => ({ category, total }))
     .sort((a, b) => b.total - a.total);
 }
+
+/**
+ * For a given category name, count its transactions and sum their amounts.
+ * @param {string} categoryName
+ * @returns {{count:number, total:number}}
+ */
+export function getCategoryStats(categoryName) {
+  let count = 0;
+  let total = 0;
+  for (const t of transactions) {
+    if (t.category === categoryName) {
+      count += 1;
+      total += t.amount;
+    }
+  }
+  return { count, total };
+}
+
+/**
+ * Count how many transactions use a category name (used to guard deletes).
+ * @param {string} categoryName
+ * @returns {number}
+ */
+export function countTransactionsInCategory(categoryName) {
+  return transactions.filter((t) => t.category === categoryName).length;
+}
+
+/**
+ * Compute balance, income, expense and transaction count for a period.
+ * @param {string|null} month - "YYYY-MM" for a single month, or null/"all" for all time
+ * @returns {{balance:number, income:number, expense:number, count:number}}
+ */
+export function getPeriodStats(month) {
+  const scoped =
+    !month || month === "all"
+      ? transactions
+      : transactions.filter((t) => t.date && t.date.slice(0, 7) === month);
+
+  let income = 0;
+  let expense = 0;
+  for (const t of scoped) {
+    if (t.type === "income") income += t.amount;
+    else if (t.type === "expense") expense += t.amount;
+  }
+
+  return {
+    balance: income - expense,
+    income,
+    expense,
+    count: scoped.length,
+  };
+}
