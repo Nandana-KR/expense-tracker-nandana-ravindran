@@ -19,7 +19,7 @@ A simple expense tracker web app I built using plain HTML, CSS, and JavaScript. 
 
 ## How to Run
 
-The app uses JavaScript modules, so it needs to be opened through a local server (not by double-clicking the file). Pick any one of these:
+The app uses JavaScript modules, so it needs to be opened through a local server. Pick any one of these:
 
 **Using VS Code Live Server**
 1. Open the project folder in VS Code.
