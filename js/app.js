@@ -6,9 +6,6 @@ import {
   getTransactions,
   deleteTransaction,
   updateTransaction,
-  getAvailableMonths,
-  getMonthlySummary,
-  getExpenseByCategory,
   countTransactionsInCategory,
   getCategoryStats,
 } from "./state.js";
@@ -38,10 +35,7 @@ import {
   bindGlobalMonth,
   showErrors,
   clearErrors,
-  populateMonths,
-  getSelectedMonth,
   renderMonthlySummary,
-  bindMonthChange,
   bindCancelEdit,
   setDateToToday,
   bindTxControls,
@@ -158,16 +152,24 @@ function renderAll() {
   renderReports();
 }
 
-function renderReports() {
-  populateMonths(getAvailableMonths());
-  const selected = getSelectedMonth();
-  if (!selected) {
-    renderMonthlySummary(null);
-    renderBars(elements.chartBars, elements.chartEmpty, []);
-    return;
+/** Sum income per category for a list, sorted high to low. */
+function incomeByCategory(list) {
+  const totals = {};
+  for (const t of list) {
+    if (t.type !== "income") continue;
+    totals[t.category] = (totals[t.category] || 0) + t.amount;
   }
-  renderMonthlySummary(getMonthlySummary(selected));
-  renderBars(elements.chartBars, elements.chartEmpty, getExpenseByCategory(selected));
+  return Object.entries(totals)
+    .map(([category, total]) => ({ category, total }))
+    .sort((a, b) => b.total - a.total);
+}
+
+/** Reports follows the global month: monthly totals + expense & income bars. */
+function renderReports() {
+  const ranged = rangedTransactions();
+  renderMonthlySummary(summarise(ranged));
+  renderBars(elements.chartBars, elements.chartEmpty, expensesByCategory(ranged));
+  renderBars(elements.incomeBars, elements.incomeEmpty, incomeByCategory(ranged));
 }
 
 /* ============================ Handlers ============================ */
@@ -325,8 +327,6 @@ function init() {
       renderTable();
     },
   });
-  bindMonthChange(renderReports);
-
   // Default the global month to the current month, then bind it.
   document.getElementById("global-month").value = String(
     new Date().getMonth() + 1

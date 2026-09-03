@@ -65,17 +65,16 @@ export const elements = {
   catName: document.getElementById("cat-name"),
   catType: document.getElementById("cat-type"),
   catDescription: document.getElementById("cat-description"),
-  catIcon: document.getElementById("cat-icon"),
-  catColor: document.getElementById("cat-color"),
 
   // Reports view
-  monthSelect: document.getElementById("month-select"),
   monthIncome: document.getElementById("month-income"),
   monthExpense: document.getElementById("month-expense"),
   monthNet: document.getElementById("month-net"),
   monthlyEmpty: document.getElementById("monthly-empty"),
   chartBars: document.getElementById("chart-bars"),
   chartEmpty: document.getElementById("chart-empty"),
+  incomeBars: document.getElementById("income-bars"),
+  incomeEmpty: document.getElementById("income-empty"),
 };
 
 /* ============================ Formatting ============================ */
@@ -139,8 +138,10 @@ function createTransactionRow(t) {
         ${sign}${formatCurrency(t.amount)}
       </td>
       <td data-label="Actions" class="tx-table__actions-col">
-        <button type="button" class="btn-icon" data-action="edit" aria-label="Edit">&#9998;</button>
-        <button type="button" class="btn-icon" data-action="delete" aria-label="Delete">&times;</button>
+        <span class="row-actions">
+          <button type="button" class="cat-action cat-action--edit" data-action="edit" aria-label="Edit">&#9998;</button>
+          <button type="button" class="cat-action cat-action--delete" data-action="delete" aria-label="Delete">&#128465;</button>
+        </span>
       </td>
     </tr>`;
 }
@@ -452,33 +453,23 @@ export function getDonutScope() {
 
 /* ============================ Reports (monthly) ============================ */
 
-export function populateMonths(months) {
-  const previous = elements.monthSelect.value;
-  elements.monthSelect.innerHTML = months
-    .map((m) => `<option value="${m}">${formatMonthLabel(m)}</option>`)
-    .join("");
-  if (months.includes(previous)) elements.monthSelect.value = previous;
-}
-
-export function getSelectedMonth() {
-  return elements.monthSelect.value || null;
-}
-
+/**
+ * Render the monthly summary totals for the selected (global) month.
+ * @param {{income:number, expense:number, balance:number}} summary
+ */
 export function renderMonthlySummary(summary) {
-  const hasData = summary !== null;
+  const hasData = summary.income > 0 || summary.expense > 0;
   const totals = document.querySelector(".monthly__totals");
-  elements.monthSelect.style.display = hasData ? "" : "none";
-  if (totals) totals.style.display = hasData ? "grid" : "none";
+  if (totals) totals.style.display = "grid";
   elements.monthlyEmpty.style.display = hasData ? "none" : "block";
-  if (!hasData) return;
 
   elements.monthIncome.textContent = formatCurrency(summary.income);
   elements.monthExpense.textContent = formatCurrency(summary.expense);
   elements.monthNet.textContent = formatCurrency(summary.balance);
-}
 
-export function bindMonthChange(onChange) {
-  elements.monthSelect.addEventListener("change", onChange);
+  // Net colour: green if positive, red if negative.
+  elements.monthNet.style.color =
+    summary.balance >= 0 ? "var(--income)" : "var(--expense)";
 }
 
 /* ============================ Form ============================ */
@@ -725,7 +716,6 @@ export function bindCategoryCardActions({ onEdit, onDelete }) {
 export function openAddCategoryModal() {
   elements.categoryForm.reset();
   elements.catId.value = "";
-  elements.catColor.value = "#2563eb";
   elements.modalTitle.textContent = "Add Category";
   clearCategoryError();
   elements.modal.hidden = false;
@@ -739,8 +729,6 @@ export function openEditCategoryModal(category) {
   elements.catName.value = category.name;
   elements.catType.value = category.type;
   elements.catDescription.value = category.description;
-  elements.catIcon.value = category.icon;
-  elements.catColor.value = category.color;
   elements.modalTitle.textContent = "Edit Category";
   clearCategoryError();
   elements.modal.hidden = false;
@@ -757,8 +745,6 @@ export function readCategoryForm() {
     name: elements.catName.value.trim(),
     type: elements.catType.value,
     description: elements.catDescription.value.trim(),
-    icon: elements.catIcon.value,
-    color: elements.catColor.value,
   };
 }
 

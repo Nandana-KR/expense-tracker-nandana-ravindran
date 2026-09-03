@@ -120,10 +120,10 @@
             <h2 class="panel__title">Add Transaction</h2>
             <div class="type-tabs" role="tablist">
               <button type="button" class="type-tab is-active" data-type="expense" role="tab">
-                Expense
+                <span class="type-tab__arrow">↓</span> Expense
               </button>
               <button type="button" class="type-tab" data-type="income" role="tab">
-                Income
+                <span class="type-tab__arrow">↑</span> Income
               </button>
             </div>
 
@@ -305,7 +305,6 @@
             </div>
             <div class="cat-toolbar__right">
               <select id="cat-type-filter" class="cat-type-select">
-                <option value="all">Category</option>
                 <option value="expense">Expense</option>
                 <option value="income">Income</option>
               </select>
@@ -348,10 +347,7 @@
         </header>
 
         <div class="panel">
-          <div class="panel__header">
-            <h2 class="panel__title">Monthly Summary</h2>
-            <select id="month-select" aria-label="Select month"></select>
-          </div>
+          <h2 class="panel__title">Monthly Summary</h2>
           <div class="monthly__totals">
             <div class="monthly__item">
               <span class="monthly__label">Income</span>
@@ -367,11 +363,18 @@
             </div>
           </div>
           <p id="monthly-empty" class="empty-state">No data for this month yet.</p>
+        </div>
 
-          <div class="chart">
-            <h3 class="chart__title">Expenses by Category</h3>
+        <div class="dashboard__grid">
+          <div class="panel">
+            <h2 class="panel__title">Expenses by Category</h2>
             <div id="chart-bars" class="chart__bars"></div>
-            <p id="chart-empty" class="empty-state">No expenses to chart for this month.</p>
+            <p id="chart-empty" class="empty-state">No expenses this month.</p>
+          </div>
+          <div class="panel">
+            <h2 class="panel__title">Income by Category</h2>
+            <div id="income-bars" class="chart__bars"></div>
+            <p id="income-empty" class="empty-state">No income this month.</p>
           </div>
         </div>
       </section>
@@ -441,33 +444,6 @@
         <div class="field">
           <label for="cat-description">Description</label>
           <input type="text" id="cat-description" placeholder="Short description" />
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="cat-icon">Icon</label>
-            <select id="cat-icon">
-              <option>🍽️</option>
-              <option>🚗</option>
-              <option>🛍️</option>
-              <option>💡</option>
-              <option>🎬</option>
-              <option>📦</option>
-              <option>💼</option>
-              <option>📈</option>
-              <option>💰</option>
-              <option>🏠</option>
-              <option>✈️</option>
-              <option>🎓</option>
-              <option>🏥</option>
-              <option>🎁</option>
-              <option>🏷️</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="cat-color">Color</label>
-            <input type="color" id="cat-color" value="#2563eb" />
-          </div>
         </div>
 
         <div class="form__actions">

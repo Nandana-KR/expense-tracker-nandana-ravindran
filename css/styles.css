@@ -514,18 +514,19 @@ body {
 .type-tabs {
   display: flex;
   gap: 0.5rem;
-  background: var(--track);
-  padding: 0.3rem;
-  border-radius: var(--radius-sm);
-  margin-bottom: 0.75rem;
+  margin-bottom: 16px;
 }
 
 .type-tab {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
   padding: 0.6rem;
-  border: none;
-  background: transparent;
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius-sm);
   font-family: inherit;
   font-size: 0.92rem;
   font-weight: 600;
@@ -534,10 +535,21 @@ body {
   transition: all 0.15s ease;
 }
 
-.type-tab.is-active {
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+.type-tab__arrow {
+  font-weight: 700;
+}
+
+/* Active tab: soft tinted background + coloured text/border. */
+.type-tab[data-type="expense"].is-active {
+  background: rgba(239, 43, 43, 0.1);
+  border-color: rgba(239, 43, 43, 0.35);
+  color: var(--expense);
+}
+
+.type-tab[data-type="income"].is-active {
+  background: rgba(22, 163, 74, 0.1);
+  border-color: rgba(22, 163, 74, 0.35);
+  color: var(--income);
 }
 
 .form {
@@ -623,13 +635,21 @@ select:focus {
 }
 
 .btn--ghost {
-  background: transparent;
-  color: var(--muted);
+  background: var(--surface);
+  color: var(--text);
   border: 1px solid var(--border);
+  font-weight: 600;
 }
 
-.btn--ghost:hover {
+.btn--ghost:hover:not(:disabled) {
   background: var(--track);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn--ghost:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ===================== Filters ===================== */
@@ -1287,7 +1307,8 @@ select:focus {
 }
 
 /* Outlined square action buttons, matching the reference. */
-.cat-actions {
+.cat-actions,
+.row-actions {
   display: inline-flex;
   gap: 0.5rem;
 }
