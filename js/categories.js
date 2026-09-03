@@ -74,11 +74,6 @@ export function getAllCategoryNames() {
   return [...new Set(categories.map((c) => c.name))];
 }
 
-/** Find a category by its name. */
-export function findCategoryByName(name) {
-  return categories.find((c) => c.name === name) || null;
-}
-
 /**
  * Add a new category.
  * @param {{name:string, type:string, icon:string, color:string, description:string}} data

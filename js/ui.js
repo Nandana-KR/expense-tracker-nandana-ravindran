@@ -45,7 +45,6 @@ export const elements = {
   ovIncomeBar: document.getElementById("ov-income-bar"),
   ovExpenseBar: document.getElementById("ov-expense-bar"),
   ovNet: document.getElementById("ov-net"),
-  donutScope: document.getElementById("donut-scope"),
 
   // Categories view
   categoryCards: document.getElementById("category-cards"),
@@ -243,27 +242,6 @@ export function bindTableActions({ onDelete, onEdit }) {
 /* ============================ Dashboard stats ============================ */
 
 /**
- * Format a percentage-change value into a labelled string with direction.
- * @param {number|null} value
- * @param {boolean} [invert] - for expenses, a rise is "bad" (down is good)
- * @returns {{text:string, cls:string}}
- */
-function formatChange(value, invert = false) {
-  if (value === null || Number.isNaN(value)) {
-    return { text: "no prior month", cls: "stat-card__change--muted" };
-  }
-  const rounded = Math.round(value * 10) / 10;
-  const up = rounded >= 0;
-  const arrow = up ? "▲" : "▼";
-  const positive = invert ? !up : up;
-  const cls = positive ? "stat-card__change--up" : "stat-card__change--down";
-  return {
-    text: `${arrow} ${Math.abs(rounded)}% from last month`,
-    cls,
-  };
-}
-
-/**
  * Render the four dashboard stat cards for the selected period.
  * @param {{balance:number, income:number, expense:number, count:number}} stats
  */
@@ -293,10 +271,6 @@ export function renderOverviewInsights(stats) {
     stats.balance >= 0 ? "var(--income)" : "var(--expense)";
 }
 
-/**
- * Populate the dashboard period dropdown (All Time + each available month).
- * @param {string[]} months - "YYYY-MM" list, newest first
- */
 /** Read the global month filter ("all" or a month number "01"–"12"). */
 export function getGlobalMonth() {
   return document.getElementById("global-month").value || "all";
@@ -305,11 +279,6 @@ export function getGlobalMonth() {
 /** Bind the global month dropdown. */
 export function bindGlobalMonth(onChange) {
   document.getElementById("global-month").addEventListener("change", onChange);
-}
-
-function applyChange(el, { text, cls }) {
-  el.textContent = text;
-  el.className = `stat-card__change ${cls}`;
 }
 
 /* ============================ Charts ============================ */
@@ -433,22 +402,6 @@ export function renderDonut(data) {
     <ul class="donut__legend">${legend}</ul>
   `;
   console.log(`[ui] Rendered donut with ${data.length} segment(s), total ${total}`);
-}
-
-/**
- * Attach a change listener to the donut "This Month / All Time" scope.
- * @param {() => void} onChange
- */
-export function bindDonutScope(onChange) {
-  elements.donutScope?.addEventListener("change", onChange);
-}
-
-/**
- * Read the current donut scope value ("month" or "all").
- * @returns {string}
- */
-export function getDonutScope() {
-  return elements.donutScope?.value || "all";
 }
 
 /* ============================ Reports (monthly) ============================ */

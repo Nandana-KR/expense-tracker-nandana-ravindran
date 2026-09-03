@@ -7,7 +7,6 @@ import {
   deleteTransaction,
   updateTransaction,
   countTransactionsInCategory,
-  getCategoryStats,
 } from "./state.js";
 import {
   getCategories,
@@ -96,6 +95,19 @@ function summarise(list) {
   return { income, expense, balance: income - expense, count: list.length };
 }
 
+/** Per-category count and total for the current global month. */
+function categoryStatsInMonth(categoryName) {
+  let count = 0;
+  let total = 0;
+  for (const t of rangedTransactions()) {
+    if (t.category === categoryName) {
+      count += 1;
+      total += t.amount;
+    }
+  }
+  return { count, total };
+}
+
 /** Expenses grouped by category for a list, sorted high to low. */
 function expensesByCategory(list) {
   const totals = {};
@@ -140,10 +152,10 @@ function renderAll() {
   renderTxStats(summarise(ranged));
   renderTable();
 
-  // Categories: all-time counts/totals (not affected by the month filter).
+  // Categories: counts/totals scoped to the global month.
   categoryPage = renderCategoryCards(
     getCategories(),
-    getCategoryStats,
+    categoryStatsInMonth,
     categoryPage,
     CATEGORY_PAGE_SIZE
   );
@@ -192,9 +204,27 @@ function handleSubmit(event) {
     addTransaction(data);
   }
 
+  // Switch the global month to the transaction's month so it stays visible
+  // (otherwise a new/edited entry in another month would be filtered out).
+  syncGlobalMonthTo(data.date);
+
   resetForm();
   renderAll();
   showView("transactions"); // jump to the list so the user sees the result
+}
+
+/**
+ * Point the global month filter at the given date's month, so a just-added or
+ * edited transaction is visible in the filtered views.
+ * @param {string} isoDate - "YYYY-MM-DD"
+ */
+function syncGlobalMonthTo(isoDate) {
+  if (!isoDate || isoDate.length < 7) return;
+  const monthNum = isoDate.slice(5, 7);
+  const select = document.getElementById("global-month");
+  if (select && select.value !== monthNum) {
+    select.value = monthNum;
+  }
 }
 
 function handleEditTransaction(id) {
@@ -243,8 +273,6 @@ function handleCategorySubmit() {
       name: data.name,
       type: data.type,
       description: data.description,
-      icon: data.icon,
-      color: data.color,
     });
   } else {
     addCategory(data);
@@ -278,18 +306,6 @@ function handleDeleteCategory(id) {
   populateCategoryOptions(elements.type.value);
   populateFilterCategories();
   renderAll();
-}
-
-/* ---- Settings handlers ---- */
-
-function handleClearData() {
-  const confirmed = window.confirm(
-    "This will permanently delete ALL transactions from this browser. Continue?"
-  );
-  if (!confirmed) return;
-  getTransactions().forEach((t) => deleteTransaction(t.id));
-  renderAll();
-  console.log("[app] All transactions cleared");
 }
 
 /* ============================ Init ============================ */
@@ -337,7 +353,7 @@ function init() {
   const renderCats = () => {
     categoryPage = renderCategoryCards(
       getCategories(),
-      getCategoryStats,
+      categoryStatsInMonth,
       categoryPage,
       CATEGORY_PAGE_SIZE
     );
@@ -365,20 +381,7 @@ function init() {
     onSubmit: handleCategorySubmit,
   });
 
-  // Settings actions
-  document.getElementById("settings-theme")?.addEventListener("click", () => {
-    document.getElementById("theme-toggle")?.click();
-  });
-  document.getElementById("clear-data")?.addEventListener("click", handleClearData);
-
-  // Hide the global month selector on pages where it isn't meaningful.
-  const monthControl = document.querySelector(".topbar .date-select");
-  const applyMonthVisibility = (view) => {
-    const hideOn = view === "categories" || view === "settings";
-    if (monthControl) monthControl.style.display = hideOn ? "none" : "";
-  };
-  initRouter(applyMonthVisibility);
-  applyMonthVisibility("dashboard");
+  initRouter();
 
   renderAll();
 }
