@@ -7,6 +7,9 @@
   <title>ExpenseTracker</title>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%92%B0</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 
@@ -26,14 +29,14 @@
         <button class="nav-item" data-view="transactions">
           <span class="nav-item__icon">≣</span> Transactions
         </button>
-        <button class="nav-item" data-view="add">
-          <span class="nav-item__icon">＋</span> Add Transaction
-        </button>
         <button class="nav-item" data-view="categories">
           <span class="nav-item__icon">◲</span> Categories
         </button>
         <button class="nav-item" data-view="reports">
           <span class="nav-item__icon">▦</span> Reports
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-item__icon">⚙</span> Settings
         </button>
       </nav>
 
@@ -47,64 +50,194 @@
 
     <!-- ===== Main content ===== -->
     <main class="content">
-      <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Toggle menu">☰</button>
+      <div class="topbar">
+        <button id="sidebar-toggle" class="sidebar-toggle" type="button" aria-label="Toggle menu">☰</button>
+        <div class="topbar__spacer"></div>
+        <div class="date-select">
+          <span class="date-select__icon" aria-hidden="true">▦</span>
+          <select id="global-month" aria-label="Filter by month">
+            <option value="01">January</option>
+            <option value="02">February</option>
+            <option value="03">March</option>
+            <option value="04">April</option>
+            <option value="05">May</option>
+            <option value="06">June</option>
+            <option value="07">July</option>
+            <option value="08">August</option>
+            <option value="09">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+      </div>
+
 
       <!-- ===== Dashboard view ===== -->
       <section class="view is-active" data-view="dashboard">
         <header class="view__header">
-          <h1 class="view__title">Dashboard</h1>
-          <p class="view__subtitle">Overview of your finances</p>
+          <div class="view__header-row">
+            <div>
+              <h1 class="view__title">Dashboard</h1>
+              <p class="view__subtitle">Overview of your finances</p>
+            </div>
+          </div>
         </header>
 
         <div class="stats">
           <div class="stat-card">
-            <span class="stat-card__label">Total Balance</span>
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--blue">⇄</span>
+              <span class="stat-card__label">Total Balance</span>
+            </div>
             <span class="stat-card__value" id="stat-balance">₹0.00</span>
-            <span class="stat-card__change" id="change-balance"></span>
           </div>
           <div class="stat-card">
-            <span class="stat-card__label">Total Income</span>
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--green">↗</span>
+              <span class="stat-card__label">Total Income</span>
+            </div>
             <span class="stat-card__value stat-card__value--income" id="stat-income">₹0.00</span>
-            <span class="stat-card__change" id="change-income"></span>
           </div>
           <div class="stat-card">
-            <span class="stat-card__label">Total Expenses</span>
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--red">↙</span>
+              <span class="stat-card__label">Total Expenses</span>
+            </div>
             <span class="stat-card__value stat-card__value--expense" id="stat-expense">₹0.00</span>
-            <span class="stat-card__change" id="change-expense"></span>
           </div>
           <div class="stat-card">
-            <span class="stat-card__label">Total Transactions</span>
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--purple">☰</span>
+              <span class="stat-card__label">Total Transactions</span>
+            </div>
             <span class="stat-card__value" id="stat-count">0</span>
-            <span class="stat-card__change stat-card__change--muted">all time</span>
           </div>
         </div>
 
         <div class="dashboard__grid">
           <div class="panel">
-            <h2 class="panel__title">Recent Transactions</h2>
-            <ul id="recent-list" class="transaction-list"></ul>
-            <p id="recent-empty" class="empty-state">No transactions yet.</p>
+            <h2 class="panel__title">Add Transaction</h2>
+            <div class="type-tabs" role="tablist">
+              <button type="button" class="type-tab is-active" data-type="expense" role="tab">
+                Expense
+              </button>
+              <button type="button" class="type-tab" data-type="income" role="tab">
+                Income
+              </button>
+            </div>
+
+            <form id="transaction-form" class="form" novalidate>
+              <input type="hidden" id="type" name="type" value="expense" />
+
+              <div class="field-row">
+                <div class="field">
+                  <label for="amount">Amount</label>
+                  <input type="number" id="amount" name="amount" placeholder="0.00" step="0.01" />
+                  <span class="form__error" data-error-for="amount"></span>
+                </div>
+
+                <div class="field">
+                  <label for="date">Date</label>
+                  <input type="date" id="date" name="date" />
+                  <span class="form__error" data-error-for="date"></span>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="category">Category</label>
+                <select id="category" name="category"></select>
+                <span class="form__error" data-error-for="category"></span>
+              </div>
+
+              <div class="field">
+                <label for="description">Description</label>
+                <input type="text" id="description" name="description" placeholder="e.g. Lunch with team" />
+                <span class="form__error" data-error-for="description"></span>
+              </div>
+
+              <div class="form__actions">
+                <button type="submit" class="btn btn--primary">Add Transaction</button>
+                <button type="button" id="cancel-edit" class="btn btn--ghost" hidden>Cancel</button>
+              </div>
+            </form>
           </div>
           <div class="panel">
-            <div class="panel__header">
-              <h2 class="panel__title">Expense Overview</h2>
-              <select id="donut-scope" aria-label="Chart period">
-                <option value="month">This Month</option>
-                <option value="all">All Time</option>
-              </select>
-            </div>
+            <h2 class="panel__title">Expense Overview</h2>
             <div id="donut" class="donut"></div>
             <p id="donut-empty" class="empty-state">No expenses to chart yet.</p>
+
+            <div class="overview-insights" id="overview-insights">
+              <div class="insight-bar">
+                <div class="insight-bar__head">
+                  <span class="insight-bar__label">Income</span>
+                  <span class="insight-bar__value insight-bar__value--income" id="ov-income">₹0.00</span>
+                </div>
+                <div class="insight-bar__track">
+                  <div class="insight-bar__fill insight-bar__fill--income" id="ov-income-bar"></div>
+                </div>
+              </div>
+              <div class="insight-bar">
+                <div class="insight-bar__head">
+                  <span class="insight-bar__label">Expense</span>
+                  <span class="insight-bar__value insight-bar__value--expense" id="ov-expense">₹0.00</span>
+                </div>
+                <div class="insight-bar__track">
+                  <div class="insight-bar__fill insight-bar__fill--expense" id="ov-expense-bar"></div>
+                </div>
+              </div>
+              <div class="insight-net">
+                <span class="insight-net__label">Net saved this month</span>
+                <span class="insight-net__value" id="ov-net">₹0.00</span>
+              </div>
+            </div>
           </div>
         </div>
+
       </section>
 
       <!-- ===== Transactions view ===== -->
       <section class="view" data-view="transactions">
         <header class="view__header">
-          <h1 class="view__title">Transactions</h1>
-          <p class="view__subtitle" id="tx-summary">All your income and expenses</p>
+          <div class="view__header-row">
+            <div>
+              <h1 class="view__title">Transactions</h1>
+              <p class="view__subtitle">View and manage all your income and expenses</p>
+            </div>
+          </div>
+          <p class="sr-only" id="tx-summary"></p>
         </header>
+
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--blue">⇄</span>
+              <span class="stat-card__label">Total Transactions</span>
+            </div>
+            <span class="stat-card__value" id="tx-stat-count">0</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--green">↗</span>
+              <span class="stat-card__label">Total Income</span>
+            </div>
+            <span class="stat-card__value stat-card__value--income" id="tx-stat-income">₹0.00</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--red">↙</span>
+              <span class="stat-card__label">Total Expenses</span>
+            </div>
+            <span class="stat-card__value stat-card__value--expense" id="tx-stat-expense">₹0.00</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__top">
+              <span class="stat-card__icon stat-card__icon--purple">💳</span>
+              <span class="stat-card__label">Current Balance</span>
+            </div>
+            <span class="stat-card__value" id="tx-stat-balance">₹0.00</span>
+          </div>
+        </div>
 
         <div class="panel">
           <div class="tx-toolbar">
@@ -124,12 +257,6 @@
               <label for="filter-category">Category</label>
               <select id="filter-category">
                 <option value="all">All categories</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="filter-month">Month</label>
-              <select id="filter-month">
-                <option value="all">All months</option>
               </select>
             </div>
           </div>
@@ -154,63 +281,13 @@
             No transactions yet. Add one to get started.
           </p>
 
-          <div class="tx-loadmore">
-            <button type="button" id="load-more" class="btn btn--ghost" hidden>
-              Load more
-            </button>
+          <div class="tx-pagination" id="tx-pagination" hidden>
+            <span class="tx-pagination__info" id="tx-page-info"></span>
+            <div class="tx-pagination__buttons">
+              <button type="button" id="tx-prev" class="btn btn--ghost btn--sm">Previous</button>
+              <button type="button" id="tx-next" class="btn btn--ghost btn--sm">Next</button>
+            </div>
           </div>
-        </div>
-      </section>
-
-      <!-- ===== Add Transaction view ===== -->
-      <section class="view" data-view="add">
-        <header class="view__header">
-          <h1 class="view__title">Add Transaction</h1>
-          <p class="view__subtitle">Record a new income or expense</p>
-        </header>
-
-        <div class="panel form-panel">
-          <div class="type-tabs" role="tablist">
-            <button type="button" class="type-tab is-active" data-type="expense" role="tab">
-              Expense
-            </button>
-            <button type="button" class="type-tab" data-type="income" role="tab">
-              Income
-            </button>
-          </div>
-
-          <form id="transaction-form" class="form" novalidate>
-            <input type="hidden" id="type" name="type" value="expense" />
-
-            <div class="field">
-              <label for="amount">Amount</label>
-              <input type="number" id="amount" name="amount" placeholder="0.00" step="0.01" />
-              <span class="form__error" data-error-for="amount"></span>
-            </div>
-
-            <div class="field">
-              <label for="category">Category</label>
-              <select id="category" name="category"></select>
-              <span class="form__error" data-error-for="category"></span>
-            </div>
-
-            <div class="field">
-              <label for="date">Date</label>
-              <input type="date" id="date" name="date" />
-              <span class="form__error" data-error-for="date"></span>
-            </div>
-
-            <div class="field">
-              <label for="description">Description</label>
-              <input type="text" id="description" name="description" placeholder="e.g. Lunch with team" />
-              <span class="form__error" data-error-for="description"></span>
-            </div>
-
-            <div class="form__actions">
-              <button type="submit" class="btn btn--primary">Add Transaction</button>
-              <button type="button" id="cancel-edit" class="btn btn--ghost" hidden>Cancel</button>
-            </div>
-          </form>
         </div>
       </section>
 
@@ -218,19 +295,48 @@
       <section class="view" data-view="categories">
         <header class="view__header">
           <h1 class="view__title">Categories</h1>
-          <p class="view__subtitle">Where your money goes and comes from</p>
+          <p class="view__subtitle">Manage your expense categories</p>
         </header>
 
-        <div class="dashboard__grid">
-          <div class="panel">
-            <h2 class="panel__title">Expenses by Category</h2>
-            <div id="cat-expense" class="chart__bars"></div>
-            <p id="cat-expense-empty" class="empty-state">No expenses yet.</p>
+        <div class="panel cat-panel">
+          <div class="cat-toolbar">
+            <div class="field cat-search">
+              <input type="search" id="cat-search-input" placeholder="Search categories..." />
+            </div>
+            <div class="cat-toolbar__right">
+              <select id="cat-type-filter" class="cat-type-select">
+                <option value="all">All Categories</option>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+              <button type="button" id="add-category-btn" class="btn btn--accent">
+                <span aria-hidden="true">＋</span> Add Category
+              </button>
+            </div>
           </div>
-          <div class="panel">
-            <h2 class="panel__title">Income by Category</h2>
-            <div id="cat-income" class="chart__bars"></div>
-            <p id="cat-income-empty" class="empty-state">No income yet.</p>
+
+          <div class="cat-table-wrap">
+            <table class="cat-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th class="cat-table__num">Transactions</th>
+                  <th class="cat-table__num">Total Spent</th>
+                  <th class="cat-table__actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="category-cards"></tbody>
+            </table>
+          </div>
+          <p id="category-empty" class="empty-state">No categories match your search.</p>
+
+          <div class="cat-pagination" id="cat-pagination">
+            <span class="cat-pagination__info" id="category-count"></span>
+            <div class="cat-pagination__buttons">
+              <button type="button" id="cat-prev" class="cat-page-btn" aria-label="Previous">‹</button>
+              <button type="button" class="cat-page-btn cat-page-btn--active" aria-current="page">1</button>
+              <button type="button" id="cat-next" class="cat-page-btn" aria-label="Next">›</button>
+            </div>
           </div>
         </div>
       </section>
@@ -270,7 +376,107 @@
           </div>
         </div>
       </section>
+
+      <!-- ===== Settings view ===== -->
+      <section class="view" data-view="settings">
+        <header class="view__header">
+          <h1 class="view__title">Settings</h1>
+          <p class="view__subtitle">Preferences and data</p>
+        </header>
+
+        <div class="panel settings-panel">
+          <div class="settings-row">
+            <div>
+              <h3 class="settings-row__title">Appearance</h3>
+              <p class="settings-row__desc">Switch between light and dark themes.</p>
+            </div>
+            <button type="button" id="settings-theme" class="btn btn--ghost">Toggle theme</button>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <h3 class="settings-row__title">Clear all data</h3>
+              <p class="settings-row__desc">Permanently delete all transactions from this browser.</p>
+            </div>
+            <button type="button" id="clear-data" class="btn btn--danger">Clear data</button>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <h3 class="settings-row__title">About</h3>
+              <p class="settings-row__desc">ExpenseTracker — a local-first expense manager. Your data stays in your
+                browser.</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
+  </div>
+
+  <!-- ===== Category add/edit modal ===== -->
+  <div id="category-modal" class="modal" hidden>
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal__header">
+        <h2 class="modal__title" id="modal-title">Add Category</h2>
+        <button type="button" class="modal__close" data-close-modal aria-label="Close">&times;</button>
+      </div>
+
+      <form id="category-form" class="form" novalidate>
+        <input type="hidden" id="cat-id" />
+
+        <div class="field">
+          <label for="cat-name">Name</label>
+          <input type="text" id="cat-name" placeholder="e.g. Groceries" />
+          <span class="form__error" data-error-for="cat-name"></span>
+        </div>
+
+        <div class="field">
+          <label for="cat-type">Type</label>
+          <select id="cat-type">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="cat-description">Description</label>
+          <input type="text" id="cat-description" placeholder="Short description" />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="cat-icon">Icon</label>
+            <select id="cat-icon">
+              <option>🍽️</option>
+              <option>🚗</option>
+              <option>🛍️</option>
+              <option>💡</option>
+              <option>🎬</option>
+              <option>📦</option>
+              <option>💼</option>
+              <option>📈</option>
+              <option>💰</option>
+              <option>🏠</option>
+              <option>✈️</option>
+              <option>🎓</option>
+              <option>🏥</option>
+              <option>🎁</option>
+              <option>🏷️</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="cat-color">Color</label>
+            <input type="color" id="cat-color" value="#2563eb" />
+          </div>
+        </div>
+
+        <div class="form__actions">
+          <button type="submit" class="btn btn--primary" id="cat-save">Save Category</button>
+          <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <script type="module" src="js/app.js"></script>

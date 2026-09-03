@@ -2,7 +2,7 @@
 // Responsible for reading from and writing to the DOM. It holds no business
 // data, it only reflects state onto the page and reads user input.
 
-import { CATEGORIES, ALL_CATEGORIES } from "./constants.js";
+import { getCategoryNames, getAllCategoryNames } from "./categories.js";
 
 // Cache references to the elements we interact with often.
 export const elements = {
@@ -24,28 +24,49 @@ export const elements = {
   search: document.getElementById("search"),
   filterType: document.getElementById("filter-type"),
   filterCategory: document.getElementById("filter-category"),
-  filterMonth: document.getElementById("filter-month"),
-  loadMore: document.getElementById("load-more"),
+  pagination: document.getElementById("tx-pagination"),
+  pageInfo: document.getElementById("tx-page-info"),
+  prevBtn: document.getElementById("tx-prev"),
+  nextBtn: document.getElementById("tx-next"),
+  txStatCount: document.getElementById("tx-stat-count"),
+  txStatIncome: document.getElementById("tx-stat-income"),
+  txStatExpense: document.getElementById("tx-stat-expense"),
+  txStatBalance: document.getElementById("tx-stat-balance"),
 
   // Dashboard view
   statBalance: document.getElementById("stat-balance"),
   statIncome: document.getElementById("stat-income"),
   statExpense: document.getElementById("stat-expense"),
   statCount: document.getElementById("stat-count"),
-  changeBalance: document.getElementById("change-balance"),
-  changeIncome: document.getElementById("change-income"),
-  changeExpense: document.getElementById("change-expense"),
-  recentList: document.getElementById("recent-list"),
-  recentEmpty: document.getElementById("recent-empty"),
   donut: document.getElementById("donut"),
   donutEmpty: document.getElementById("donut-empty"),
+  ovIncome: document.getElementById("ov-income"),
+  ovExpense: document.getElementById("ov-expense"),
+  ovIncomeBar: document.getElementById("ov-income-bar"),
+  ovExpenseBar: document.getElementById("ov-expense-bar"),
+  ovNet: document.getElementById("ov-net"),
   donutScope: document.getElementById("donut-scope"),
 
   // Categories view
-  catExpense: document.getElementById("cat-expense"),
-  catExpenseEmpty: document.getElementById("cat-expense-empty"),
-  catIncome: document.getElementById("cat-income"),
-  catIncomeEmpty: document.getElementById("cat-income-empty"),
+  categoryCards: document.getElementById("category-cards"),
+  categoryEmpty: document.getElementById("category-empty"),
+  categoryCount: document.getElementById("category-count"),
+  catSearch: document.getElementById("cat-search-input"),
+  catTypeFilter: document.getElementById("cat-type-filter"),
+  addCategoryBtn: document.getElementById("add-category-btn"),
+  catPrev: document.getElementById("cat-prev"),
+  catNext: document.getElementById("cat-next"),
+
+  // Category modal
+  modal: document.getElementById("category-modal"),
+  modalTitle: document.getElementById("modal-title"),
+  categoryForm: document.getElementById("category-form"),
+  catId: document.getElementById("cat-id"),
+  catName: document.getElementById("cat-name"),
+  catType: document.getElementById("cat-type"),
+  catDescription: document.getElementById("cat-description"),
+  catIcon: document.getElementById("cat-icon"),
+  catColor: document.getElementById("cat-color"),
 
   // Reports view
   monthSelect: document.getElementById("month-select"),
@@ -101,36 +122,6 @@ function formatMonthLabel(month) {
 /* ============================ Transaction list ============================ */
 
 /**
- * Build a single transaction list item element.
- * @param {object} transaction
- * @param {boolean} [withActions] - include edit/delete buttons
- * @returns {HTMLLIElement}
- */
-function createTransactionItem(transaction, withActions = true) {
-  const li = document.createElement("li");
-  li.className = `transaction transaction--${transaction.type}`;
-  li.dataset.id = transaction.id;
-
-  const sign = transaction.type === "income" ? "+" : "-";
-  const actions = withActions
-    ? `<div class="transaction__actions">
-         <button type="button" class="btn-icon" data-action="edit" aria-label="Edit transaction">&#9998;</button>
-         <button type="button" class="btn-icon" data-action="delete" aria-label="Delete transaction">&times;</button>
-       </div>`
-    : "";
-
-  li.innerHTML = `
-    <div class="transaction__info">
-      <span class="transaction__description">${transaction.description || transaction.category}</span>
-      <span class="transaction__meta">${transaction.category} &middot; ${formatDate(transaction.date)}</span>
-    </div>
-    <span class="transaction__amount">${sign}${formatCurrency(transaction.amount)}</span>
-    ${actions}
-  `;
-  return li;
-}
-
-/**
  * Build a single transaction table row.
  * @param {object} t
  * @returns {string} HTML for a <tr>
@@ -155,41 +146,54 @@ function createTransactionRow(t) {
 }
 
 /**
- * Render the filtered transactions as a table, limited to `visibleCount`
- * (for the load-more pagination). Also updates the summary line and the
- * load-more button.
- * @param {Array} transactions - already filtered, newest-first order applied here
- * @param {number} visibleCount - how many to show
+ * Render one page of the filtered transactions as a table, with Prev/Next
+ * pagination controls and a summary line.
+ * @param {Array} transactions - already filtered
+ * @param {number} page - current page (1-based)
+ * @param {number} pageSize - rows per page
  * @param {{income:number, expense:number}} totals - totals of the filtered set
+ * @returns {number} the (clamped) page actually shown
  */
-export function renderTransactions(transactions, visibleCount, totals) {
-  const ordered = [...transactions].reverse();
-  const shown = ordered.slice(0, visibleCount);
+export function renderTransactions(transactions, page, pageSize, totals) {
+  const ordered = [...transactions].reverse(); // newest first
+  const count = ordered.length;
+  const totalPages = Math.max(1, Math.ceil(count / pageSize));
+
+  // Clamp the page in case filtering shrank the list.
+  const current = Math.min(Math.max(1, page), totalPages);
+  const start = (current - 1) * pageSize;
+  const shown = ordered.slice(start, start + pageSize);
 
   elements.tbody.innerHTML = shown.map(createTransactionRow).join("");
 
   // Empty state.
-  const anyData = transactions.length > 0;
+  const anyData = count > 0;
   elements.emptyState.style.display = anyData ? "none" : "block";
   const filtersActive =
     elements.filterType.value !== "all" ||
     elements.filterCategory.value !== "all" ||
-    elements.filterMonth.value !== "all" ||
     elements.search.value.trim() !== "";
   elements.emptyState.textContent = filtersActive
     ? "No transactions match your search or filters."
     : "No transactions yet. Add one to get started.";
 
-  // Load-more button.
-  elements.loadMore.hidden = shown.length >= transactions.length;
+  // Pagination controls.
+  elements.pagination.hidden = !anyData;
+  if (anyData) {
+    const from = start + 1;
+    const to = start + shown.length;
+    elements.pageInfo.textContent = `Showing ${from}–${to} of ${count}`;
+    elements.prevBtn.disabled = current <= 1;
+    elements.nextBtn.disabled = current >= totalPages;
+  }
 
   // Summary line.
-  const count = transactions.length;
   elements.txSummary.textContent =
     `${count} transaction${count === 1 ? "" : "s"} · ` +
     `Income ${formatCurrency(totals.income)} · Expense ${formatCurrency(totals.expense)}`;
 
-  console.log(`[ui] Rendered ${shown.length} of ${count} transaction(s)`);
+  console.log(`[ui] Rendered page ${current}/${totalPages} (${shown.length} of ${count})`);
+  return current;
 }
 
 /**
@@ -201,36 +205,22 @@ export function getSearchText() {
 }
 
 /**
- * Populate the month filter dropdown.
- * @param {string[]} months - "YYYY-MM" list, newest first
- */
-export function populateMonthFilter(months) {
-  const previous = elements.filterMonth.value;
-  elements.filterMonth.innerHTML =
-    `<option value="all">All months</option>` +
-    months.map((m) => `<option value="${m}">${formatMonthLabel(m)}</option>`).join("");
-  if (previous === "all" || months.includes(previous)) {
-    elements.filterMonth.value = previous;
-  }
-}
-
-/**
- * Bind search, type, category and month filter changes.
+ * Bind search, type, category and date filter changes.
  * @param {() => void} onChange
  */
 export function bindTxControls(onChange) {
   elements.search.addEventListener("input", onChange);
   elements.filterType.addEventListener("change", onChange);
   elements.filterCategory.addEventListener("change", onChange);
-  elements.filterMonth.addEventListener("change", onChange);
 }
 
 /**
- * Bind the load-more button.
- * @param {() => void} onLoadMore
+ * Bind the Previous / Next pagination buttons.
+ * @param {{onPrev:()=>void, onNext:()=>void}} handlers
  */
-export function bindLoadMore(onLoadMore) {
-  elements.loadMore.addEventListener("click", onLoadMore);
+export function bindPagination({ onPrev, onNext }) {
+  elements.prevBtn.addEventListener("click", onPrev);
+  elements.nextBtn.addEventListener("click", onNext);
 }
 
 /**
@@ -246,21 +236,6 @@ export function bindTableActions({ onDelete, onEdit }) {
     if (!id) return;
     if (button.dataset.action === "delete") onDelete(id);
     else if (button.dataset.action === "edit") onEdit(id);
-  });
-}
-
-/**
- * Render the most recent transactions on the dashboard (read-only).
- * @param {Array} transactions
- * @param {number} [limit]
- */
-export function renderRecent(transactions, limit = 5) {
-  elements.recentList.innerHTML = "";
-  const recent = [...transactions].reverse().slice(0, limit);
-
-  elements.recentEmpty.style.display = recent.length ? "none" : "block";
-  recent.forEach((t) => {
-    elements.recentList.appendChild(createTransactionItem(t, false));
   });
 }
 
@@ -288,22 +263,47 @@ function formatChange(value, invert = false) {
 }
 
 /**
- * Render the four dashboard stat cards.
- * @param {object} stats - from state.getDashboardStats()
+ * Render the four dashboard stat cards for the selected period.
+ * @param {{balance:number, income:number, expense:number, count:number}} stats
  */
 export function renderDashboardStats(stats) {
   elements.statBalance.textContent = formatCurrency(stats.balance);
   elements.statIncome.textContent = formatCurrency(stats.income);
   elements.statExpense.textContent = formatCurrency(stats.expense);
   elements.statCount.textContent = String(stats.count);
+}
 
-  const b = formatChange(stats.change.balance);
-  const i = formatChange(stats.change.income);
-  const e = formatChange(stats.change.expense, true);
+/**
+ * Render the Expense Overview insights: income vs expense bars and net saved.
+ * Bars are sized relative to the larger of income/expense.
+ * @param {{income:number, expense:number, balance:number}} stats
+ */
+export function renderOverviewInsights(stats) {
+  elements.ovIncome.textContent = formatCurrency(stats.income);
+  elements.ovExpense.textContent = formatCurrency(stats.expense);
+  elements.ovNet.textContent = formatCurrency(stats.balance);
 
-  applyChange(elements.changeBalance, b);
-  applyChange(elements.changeIncome, i);
-  applyChange(elements.changeExpense, e);
+  const max = Math.max(stats.income, stats.expense, 1);
+  elements.ovIncomeBar.style.width = `${(stats.income / max) * 100}%`;
+  elements.ovExpenseBar.style.width = `${(stats.expense / max) * 100}%`;
+
+  // Net colour: green if positive, red if negative.
+  elements.ovNet.style.color =
+    stats.balance >= 0 ? "var(--income)" : "var(--expense)";
+}
+
+/**
+ * Populate the dashboard period dropdown (All Time + each available month).
+ * @param {string[]} months - "YYYY-MM" list, newest first
+ */
+/** Read the global month filter ("all" or a month number "01"–"12"). */
+export function getGlobalMonth() {
+  return document.getElementById("global-month").value || "all";
+}
+
+/** Bind the global month dropdown. */
+export function bindGlobalMonth(onChange) {
+  document.getElementById("global-month").addEventListener("change", onChange);
 }
 
 function applyChange(el, { text, cls }) {
@@ -484,19 +484,21 @@ export function bindMonthChange(onChange) {
 /* ============================ Form ============================ */
 
 export function populateCategoryOptions(type, selected) {
-  const categories = CATEGORIES[type] || [];
+  const names = getCategoryNames(type);
   elements.category.innerHTML =
     `<option value="">Select category</option>` +
-    categories.map((c) => `<option value="${c}">${c}</option>`).join("");
-  if (selected && categories.includes(selected)) {
+    names.map((c) => `<option value="${c}">${c}</option>`).join("");
+  if (selected && names.includes(selected)) {
     elements.category.value = selected;
   }
 }
 
 export function populateFilterCategories() {
+  const previous = elements.filterCategory.value;
   elements.filterCategory.innerHTML =
     `<option value="all">All categories</option>` +
-    ALL_CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join("");
+    getAllCategoryNames().map((c) => `<option value="${c}">${c}</option>`).join("");
+  if (previous) elements.filterCategory.value = previous;
 }
 
 /**
@@ -595,7 +597,200 @@ export function readFilters() {
   return {
     type: elements.filterType.value,
     category: elements.filterCategory.value,
-    month: elements.filterMonth.value,
     search: getSearchText(),
   };
 }
+
+/**
+ * Render the stat cards at the top of the Transactions page.
+ * Uses the same month-filtered totals as the table so they always match.
+ * @param {{count:number, income:number, expense:number, balance:number}} stats
+ */
+export function renderTxStats(stats) {
+  elements.txStatCount.textContent = String(stats.count);
+  elements.txStatIncome.textContent = formatCurrency(stats.income);
+  elements.txStatExpense.textContent = formatCurrency(stats.expense);
+  elements.txStatBalance.textContent = formatCurrency(stats.balance);
+}
+
+/* ============================ Categories page ============================ */
+
+/**
+ * Render the category management table (one page), with search/type filtering
+ * and pagination info.
+ * @param {Array} categories - each with {id,name,type,description}
+ * @param {(name:string) => {count:number,total:number}} statsFor
+ * @param {number} [page] - current page (1-based)
+ * @param {number} [pageSize] - rows per page
+ * @returns {number} the (clamped) page actually shown
+ */
+export function renderCategoryCards(categories, statsFor, page = 1, pageSize = 8) {
+  const search = elements.catSearch.value.trim().toLowerCase();
+  const typeFilter = elements.catTypeFilter.value;
+
+  const filtered = categories.filter((c) => {
+    const matchesType = typeFilter === "all" || c.type === typeFilter;
+    const matchesSearch =
+      !search ||
+      c.name.toLowerCase().includes(search) ||
+      c.description.toLowerCase().includes(search);
+    return matchesType && matchesSearch;
+  });
+
+  elements.categoryEmpty.style.display = filtered.length ? "none" : "block";
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const current = Math.min(Math.max(1, page), totalPages);
+  const start = (current - 1) * pageSize;
+  const pageItems = filtered.slice(start, start + pageSize);
+
+  elements.categoryCards.innerHTML = pageItems
+    .map((c) => {
+      const { count, total } = statsFor(c.name);
+      return `
+        <tr data-id="${c.id}">
+          <td data-label="Category">
+            <div class="cat-cell__text">
+              <span class="cat-cell__name">${c.name}</span>
+              <span class="cat-cell__desc">${c.description || "No description"}</span>
+            </div>
+          </td>
+          <td data-label="Transactions" class="cat-table__num">
+            <span class="cat-cell__count">${count}</span>
+            <span class="cat-cell__count-label">transactions</span>
+          </td>
+          <td data-label="Total Spent" class="cat-table__num cat-cell__total">${formatCurrency(total)}</td>
+          <td data-label="Actions" class="cat-table__actions-col">
+            <span class="cat-actions">
+              <button type="button" class="cat-action cat-action--edit" data-action="edit" aria-label="Edit category">&#9998;</button>
+              <button type="button" class="cat-action cat-action--delete" data-action="delete" aria-label="Delete category">&#128465;</button>
+            </span>
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  // Footer: "Showing 1 to 6 of 6 categories".
+  const from = filtered.length ? start + 1 : 0;
+  const to = start + pageItems.length;
+  elements.categoryCount.textContent = filtered.length
+    ? `Showing ${from} to ${to} of ${filtered.length} categories`
+    : "";
+
+  // Pagination buttons: active page number + prev/next enable state.
+  const activeBtn = document.querySelector(".cat-page-btn--active");
+  if (activeBtn) activeBtn.textContent = String(current);
+  if (elements.catPrev) elements.catPrev.disabled = current <= 1;
+  if (elements.catNext) elements.catNext.disabled = current >= totalPages;
+
+  console.log(`[ui] Rendered category page ${current}/${totalPages} (${pageItems.length} of ${filtered.length})`);
+  return current;
+}
+
+/**
+ * Bind the category Previous / Next pagination buttons.
+ * @param {{onPrev:()=>void, onNext:()=>void}} handlers
+ */
+export function bindCategoryPagination({ onPrev, onNext }) {
+  elements.catPrev?.addEventListener("click", onPrev);
+  elements.catNext?.addEventListener("click", onNext);
+}
+
+/**
+ * Bind the category search and type filter.
+ * @param {() => void} onChange
+ */
+export function bindCategoryControls(onChange) {
+  elements.catSearch.addEventListener("input", onChange);
+  elements.catTypeFilter.addEventListener("change", onChange);
+}
+
+/**
+ * Delegate edit/delete clicks on the category cards.
+ * @param {{onEdit:(id:string)=>void, onDelete:(id:string)=>void}} handlers
+ */
+export function bindCategoryCardActions({ onEdit, onDelete }) {
+  elements.categoryCards.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-action]");
+    if (!button) return;
+    const row = event.target.closest("[data-id]");
+    const id = row?.dataset.id;
+    if (!id) return;
+    if (button.dataset.action === "edit") onEdit(id);
+    else if (button.dataset.action === "delete") onDelete(id);
+  });
+}
+
+/* ============================ Category modal ============================ */
+
+/** Open the modal in "add" mode. */
+export function openAddCategoryModal() {
+  elements.categoryForm.reset();
+  elements.catId.value = "";
+  elements.catColor.value = "#2563eb";
+  elements.modalTitle.textContent = "Add Category";
+  clearCategoryError();
+  elements.modal.hidden = false;
+  elements.catName.focus();
+}
+
+/** Open the modal pre-filled for editing. */
+export function openEditCategoryModal(category) {
+  elements.categoryForm.reset();
+  elements.catId.value = category.id;
+  elements.catName.value = category.name;
+  elements.catType.value = category.type;
+  elements.catDescription.value = category.description;
+  elements.catIcon.value = category.icon;
+  elements.catColor.value = category.color;
+  elements.modalTitle.textContent = "Edit Category";
+  clearCategoryError();
+  elements.modal.hidden = false;
+  elements.catName.focus();
+}
+
+export function closeCategoryModal() {
+  elements.modal.hidden = true;
+}
+
+export function readCategoryForm() {
+  return {
+    id: elements.catId.value || null,
+    name: elements.catName.value.trim(),
+    type: elements.catType.value,
+    description: elements.catDescription.value.trim(),
+    icon: elements.catIcon.value,
+    color: elements.catColor.value,
+  };
+}
+
+export function showCategoryError(message) {
+  const slot = document.querySelector('[data-error-for="cat-name"]');
+  if (slot) slot.textContent = message;
+  elements.catName.classList.add("input--invalid");
+}
+
+export function clearCategoryError() {
+  const slot = document.querySelector('[data-error-for="cat-name"]');
+  if (slot) slot.textContent = "";
+  elements.catName.classList.remove("input--invalid");
+}
+
+/**
+ * Wire the modal: open button, close buttons/backdrop, form submit.
+ * @param {{onOpen:()=>void, onSubmit:()=>void}} handlers
+ */
+export function bindCategoryModal({ onOpen, onSubmit }) {
+  elements.addCategoryBtn.addEventListener("click", onOpen);
+
+  elements.modal.querySelectorAll("[data-close-modal]").forEach((el) => {
+    el.addEventListener("click", closeCategoryModal);
+  });
+
+  elements.categoryForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    onSubmit();
+  });
+}
+
+
